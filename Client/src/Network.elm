@@ -8,7 +8,7 @@ import Json.Encode as E
 
 serverUrl : String
 serverUrl =
-    "https://uxstudies-api.kde.org"
+    "https://api.polinpin.blackquill.cc"
 
 
 endpoint : String -> String

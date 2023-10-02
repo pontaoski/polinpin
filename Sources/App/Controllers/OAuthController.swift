@@ -209,7 +209,7 @@ final class OAuth2Controller: RouteCollection {
 
         clientURL.queryItems = queryItems
 
-        return req.redirect(to: clientURL.url!.absoluteString, type: .temporary)
+        return req.redirect(to: clientURL.url!.absoluteString, redirectType: .temporary)
     }
 }
 

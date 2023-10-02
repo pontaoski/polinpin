@@ -269,7 +269,7 @@ preTask : LoadedModel -> Element LoadedMsg
 preTask model =
     textColumn [ spacing 10, padding 24, width fill ]
         [ el [ Font.bold, Font.size <| UI.intScale 2 ] (text "Welcome")
-        , par "This is a study for KDE, to help us make our software more appealing."
+        , par "This is a study for open source desktops, to help gauge what is considered appealing."
         , par "You will be presented an image, and a list of words."
         , par "Click words that describe how you see the image to move them to the right list."
         , par "Click words in the right list to move them back to the word bank."

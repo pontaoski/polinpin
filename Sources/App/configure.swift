@@ -41,11 +41,14 @@ public func configure(_ app: Application) throws {
         ), as: .mysql)
     case .postgres(let hostname, let port, let username, let password, let database):
         app.databases.use(.postgres(
-            hostname: hostname,
-            port: port,
-            username: username,
-            password: password,
-            database: database
+            configuration: .init(
+                hostname: hostname,
+                port: port,
+                username: username,
+                password: password,
+                database: database,
+                tls: .disable
+            )
         ), as: .psql)
     case .mysqlURL(let url):
         app.databases.use(try .mysql(url: url), as: .sqlite)
