@@ -21,7 +21,7 @@ main =
     layout [ width fill, height fill ] $
         row [ width $ minimum 600 fill, height fill, Font.size 16 ]
             [ channelPanel sampleChannels sampleActiveChannel
-            , el [padding 10, Background.color $ rgb255 0xFF 0x00 0x00] none -- chatPanel sampleActiveChannel sampleMessages
+            , chatPanel sampleActiveChannel sampleMessages
             ]
 
 

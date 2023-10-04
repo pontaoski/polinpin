@@ -24,6 +24,7 @@ to generate this file without the comments in this block.
   , "foreign-object"
   , "halogen"
   , "halogen-store"
+  , "halogen-vdom"
   , "integers"
   , "lists"
   , "maybe"
@@ -36,8 +37,10 @@ to generate this file without the comments in this block.
   , "routing-duplex"
   , "safe-coerce"
   , "strings"
+  , "test-unit"
   , "transformers"
   , "tuples"
+  , "unsafe-coerce"
   , "web-events"
   , "web-uievents"
   ]

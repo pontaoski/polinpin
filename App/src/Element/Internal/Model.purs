@@ -32,6 +32,8 @@ import Foreign (Foreign)
 import Data.Newtype (wrap, unwrap, class Newtype)
 import Foreign.Object as FO
 import Partial.Unsafe (unsafeCrashWith)
+import Element.Internal.Merginator (preProcess)
+import Debug as Debug
 
 data Element p i
     = Unstyled (LayoutContext -> HTML p i)
@@ -1960,7 +1962,7 @@ finalizeNode has node attributes children embedMode parentContext =
                 Keyed keyed ->
                     HH.keyed
                         nodeName
-                        attrs
+                        (preProcess attrs)
                         (case embedMode of
                             NoStyleSheet ->
                                 keyed
@@ -1983,7 +1985,7 @@ finalizeNode has node attributes children embedMode parentContext =
                         _ ->
                             HH.element nodeName
                     )
-                        (map (\x -> x # unwrap # wrap) attrs)
+                        (preProcess (map (\x -> x # unwrap # wrap) attrs))
                         (case embedMode of
                             NoStyleSheet ->
                                 unkeyed
@@ -2005,7 +2007,7 @@ finalizeNode has node attributes children embedMode parentContext =
 
                 Embedded nodeName internal ->
                     HH.element (ElemName nodeName)
-                        attributes
+                        (preProcess attributes)
                         [ createNode (ElemName internal)
                             [ wrap (unwrap (HP.classes [classes.any, classes.single]))
                             ]
@@ -2691,10 +2693,17 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                     gatherAttrRecursive classes node has transform styles (actualAttribute : attrs) children remaining
 
                 StyleClass flag style ->
+                    Debug.trace (Tuple (show flag) (show has)) \_ ->
                     if Flag.present flag has then
+                        Debug.trace "flag present" \_ ->
+                        Debug.trace (Tuple flag style) \_ ->
+                        -- Debug.spy "present return value" $
                         gatherAttrRecursive classes node has transform styles attrs children remaining
 
                     else if skippable flag style then
+                        Debug.trace "flag not present but is skippable" \_ ->
+                        Debug.trace (Tuple flag style) \_ ->
+                        -- Debug.spy "skippable return value" $
                         gatherAttrRecursive (wrap (getStyleName style) `Array.cons` classes)
                             node
                             (Flag.add flag has)
@@ -2705,6 +2714,9 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                             remaining
 
                     else
+                        Debug.trace "flag not present and not skippable" \_ ->
+                        Debug.trace (Tuple flag style) \_ ->
+                        -- Debug.spy "none left beef return value" $
                         gatherAttrRecursive (wrap (getStyleName style) `Array.cons` classes)
                             node
                             (Flag.add flag has)

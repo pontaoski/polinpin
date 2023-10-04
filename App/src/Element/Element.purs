@@ -213,25 +213,34 @@ type Option =
 {-| -}
 layoutWith :: forall r p i . { options :: Array Option } -> Array (Attribute r p i) -> Element p i -> HH.HTML p i
 layoutWith { options } attrs child =
-    let
-        rendered =
-                Internal.renderRoot options
-                    (Internal.htmlClasses
-                        [ classes.root
-                        , classes.any
-                        , classes.single
-                        ]
-                        `Array.cons` (Internal.rootStyle <> attrs)
-                    )
-                    child
-    in
-    Debug.trace rendered \_ -> rendered
+    Internal.renderRoot options
+        (Internal.htmlClasses
+            [ classes.root
+            , classes.any
+            , classes.single
+            ]
+            `Array.cons` (Internal.rootStyle <> attrs)
+        )
+        child
 
 {-| -}
 width :: forall r p i. Length -> Attribute r p i
 width =
     Internal.Width
 
+{-| Highlight the borders of an element and it's children below. This can really help if you're running into some issue with your layout!
+
+**Note** This attribute needs to be handed `Debug.todo` in order to work, even though it won't do anything with it. This is a safety measure so you don't accidently ship code with `explain` in it, as Elm won't compile with `--optimize` if you still have a `Debug` statement in your code.
+
+    el
+        [ Element.explain Debug.todo
+        ]
+        (text "Help, I'm being debugged!")
+
+-}
+explain :: forall r p i. Attribute r p i
+explain =
+    Internal.htmlClass (HH.ClassName "explain")
 
 {-| -}
 height :: forall r p i. Length -> Attribute r p i
