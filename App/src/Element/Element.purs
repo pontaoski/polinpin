@@ -15,6 +15,7 @@ import Element.Internal.Flag as Flag
 import Element.Internal.Style (classes)
 import Element.Internal.Style as Style
 import Data.Newtype (unwrap)
+import Debug as Debug
 
 type Color = Internal.Color
 
@@ -210,17 +211,21 @@ type Option =
     Internal.Option
 
 {-| -}
-layoutWith :: forall aligned r p i . { options :: Array Option } -> Array (Attribute r p i) -> Element p i -> HH.HTML p i
+layoutWith :: forall r p i . { options :: Array Option } -> Array (Attribute r p i) -> Element p i -> HH.HTML p i
 layoutWith { options } attrs child =
-    Internal.renderRoot options
-        (Internal.htmlClasses
-            [ classes.root
-            , classes.any
-            , classes.single
-            ]
-            `Array.cons` (Internal.rootStyle <> attrs)
-        )
-        child
+    let
+        rendered =
+                Internal.renderRoot options
+                    (Internal.htmlClasses
+                        [ classes.root
+                        , classes.any
+                        , classes.single
+                        ]
+                        `Array.cons` (Internal.rootStyle <> attrs)
+                    )
+                    child
+    in
+    Debug.trace rendered \_ -> rendered
 
 {-| -}
 width :: forall r p i. Length -> Attribute r p i
