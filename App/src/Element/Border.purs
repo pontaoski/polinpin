@@ -39,7 +39,7 @@ import Element (Attr, Attribute, Color)
 import Element.Internal.Flag as Flag
 import Element.Internal.Model as Internal
 import Element.Internal.Style as Style
-import Element.Internal.Style (classes)
+import Element.Internal.Style (classes, Selector(..))
 import Data.Tuple (Tuple(..))
 import Data.Int as Int
 import Data.Newtype (unwrap)
@@ -135,19 +135,19 @@ widthEach { bottom, top, left, right } =
 {-| -}
 solid :: forall r p i. Attribute r p i
 solid =
-    Internal.Class Flag.borderStyle (unwrap classes.borderSolid)
+    Internal.Class Flag.borderStyle classes.borderSolid
 
 
 {-| -}
 dashed :: forall r p i. Attribute r p i
 dashed =
-    Internal.Class Flag.borderStyle (unwrap classes.borderDashed)
+    Internal.Class Flag.borderStyle classes.borderDashed
 
 
 {-| -}
 dotted :: forall r p i. Attribute r p i
 dotted =
-    Internal.Class Flag.borderStyle (unwrap classes.borderDotted)
+    Internal.Class Flag.borderStyle classes.borderDotted
 
 
 {-| Round all corners.
@@ -157,7 +157,7 @@ rounded radius =
     Internal.StyleClass
         Flag.borderRound
         (Internal.Single
-            ("br-" <> Int.toStringAs Int.decimal radius)
+            (Selector $ "br-" <> Int.toStringAs Int.decimal radius)
             "border-radius"
             (Int.toStringAs Int.decimal radius <> "px")
         )
@@ -174,7 +174,7 @@ roundEach :: forall r p i.
 roundEach { topLeft, topRight, bottomLeft, bottomRight } =
     Internal.StyleClass Flag.borderRound
         (Internal.Single
-            ("br-"
+            (Selector $ "br-"
                 <> Int.toStringAs Int.decimal topLeft
                 <> "-"
                 <> Int.toStringAs Int.decimal topRight
@@ -238,7 +238,7 @@ shadow almostShade =
     in
     Internal.StyleClass Flag.shadows $
         Internal.Single
-            (Internal.boxShadowClass shade)
+            (Selector $ Internal.boxShadowClass shade)
             "box-shadow"
             (Internal.formatBoxShadow shade)
 
@@ -263,7 +263,7 @@ innerShadow almostShade =
     in
     Internal.StyleClass Flag.shadows $
         Internal.Single
-            (Internal.boxShadowClass shade)
+            (Selector $ Internal.boxShadowClass shade)
             "box-shadow"
             (Internal.formatBoxShadow shade)
 

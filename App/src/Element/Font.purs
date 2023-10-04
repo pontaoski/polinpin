@@ -70,7 +70,7 @@ import Prelude
 import Element (Attr, Attribute, Color)
 import Element.Internal.Flag as Flag
 import Element.Internal.Model as Internal
-import Element.Internal.Style (classes)
+import Element.Internal.Style (classes, Selector(..))
 import Data.Array as Array
 import Data.Tuple (Tuple(..))
 import Data.Maybe (Maybe)
@@ -78,6 +78,7 @@ import Data.Number.Format as NumberFormat
 import Data.Int as Int
 import Data.String as String
 import Data.Newtype (unwrap)
+import Halogen.HTML (ClassName(..))
 
 {-| -}
 type Font =
@@ -168,13 +169,13 @@ with =
 {-| -}
 sizeByCapital :: forall r p i. Attribute r p i
 sizeByCapital =
-    Internal.htmlClass (unwrap classes.sizeByCapital)
+    Internal.htmlClass classes.sizeByCapital
 
 
 {-| -}
 full :: forall r p i. Attribute r p i
 full =
-    Internal.htmlClass (unwrap classes.fullSize)
+    Internal.htmlClass classes.fullSize
 
 
 {-| **Note** it's likely that `Font.external` will cause a flash on your page on loading.
@@ -219,7 +220,7 @@ letterSpacing :: forall r p i. Number -> Attribute r p i
 letterSpacing offset =
     Internal.StyleClass Flag.letterSpacing $
         Internal.Single
-            ("ls-" <> Internal.floatClass offset)
+            (Selector ("ls-" <> Internal.floatClass offset))
             "letter-spacing"
             (NumberFormat.toString offset <> "px")
 
@@ -229,34 +230,34 @@ letterSpacing offset =
 wordSpacing :: forall r p i. Number -> Attribute r p i
 wordSpacing offset =
     Internal.StyleClass Flag.wordSpacing $
-        Internal.Single ("ws-" <> Internal.floatClass offset) "word-spacing" (NumberFormat.toString offset <> "px")
+        Internal.Single (Selector $ "ws-" <> Internal.floatClass offset) "word-spacing" (NumberFormat.toString offset <> "px")
 
 
 {-| Align the font to the left.
 -}
 alignLeft :: forall r p i. Attribute r p i
 alignLeft =
-    Internal.Class Flag.fontAlignment (unwrap classes.textLeft)
+    Internal.Class Flag.fontAlignment classes.textLeft
 
 
 {-| Align the font to the right.
 -}
 alignRight :: forall r p i. Attribute r p i
 alignRight =
-    Internal.Class Flag.fontAlignment (unwrap classes.textRight)
+    Internal.Class Flag.fontAlignment classes.textRight
 
 
 {-| Center align the font.
 -}
 center :: forall r p i. Attribute r p i
 center =
-    Internal.Class Flag.fontAlignment (unwrap classes.textCenter)
+    Internal.Class Flag.fontAlignment classes.textCenter
 
 
 {-| -}
 justify :: forall r p i. Attribute r p i
 justify =
-    Internal.Class Flag.fontAlignment (unwrap classes.textJustify)
+    Internal.Class Flag.fontAlignment classes.textJustify
 
 
 
@@ -269,80 +270,80 @@ justify =
 {-| -}
 underline :: forall r p i. Attribute r p i
 underline =
-    Internal.htmlClass (unwrap classes.underline)
+    Internal.htmlClass classes.underline
 
 
 {-| -}
 strike :: forall r p i. Attribute r p i
 strike =
-    Internal.htmlClass (unwrap classes.strike)
+    Internal.htmlClass classes.strike
 
 
 {-| -}
 italic :: forall r p i. Attribute r p i
 italic =
-    Internal.htmlClass (unwrap classes.italic)
+    Internal.htmlClass classes.italic
 
 
 {-| -}
 bold :: forall r p i. Attribute r p i
 bold =
-    Internal.Class Flag.fontWeight (unwrap classes.bold)
+    Internal.Class Flag.fontWeight classes.bold
 
 
 {-| -}
 light :: forall r p i. Attribute r p i
 light =
-    Internal.Class Flag.fontWeight (unwrap classes.textLight)
+    Internal.Class Flag.fontWeight classes.textLight
 
 
 {-| -}
 hairline :: forall r p i. Attribute r p i
 hairline =
-    Internal.Class Flag.fontWeight (unwrap classes.textThin)
+    Internal.Class Flag.fontWeight classes.textThin
 
 
 {-| -}
 extraLight :: forall r p i. Attribute r p i
 extraLight =
-    Internal.Class Flag.fontWeight (unwrap classes.textExtraLight)
+    Internal.Class Flag.fontWeight classes.textExtraLight
 
 
 {-| -}
 regular :: forall r p i. Attribute r p i
 regular =
-    Internal.Class Flag.fontWeight (unwrap classes.textNormalWeight)
+    Internal.Class Flag.fontWeight classes.textNormalWeight
 
 
 {-| -}
 semiBold :: forall r p i. Attribute r p i
 semiBold =
-    Internal.Class Flag.fontWeight (unwrap classes.textSemiBold)
+    Internal.Class Flag.fontWeight classes.textSemiBold
 
 
 {-| -}
 medium :: forall r p i. Attribute r p i
 medium =
-    Internal.Class Flag.fontWeight (unwrap classes.textMedium)
+    Internal.Class Flag.fontWeight classes.textMedium
 
 
 {-| -}
 extraBold :: forall r p i. Attribute r p i
 extraBold =
-    Internal.Class Flag.fontWeight (unwrap classes.textExtraBold)
+    Internal.Class Flag.fontWeight classes.textExtraBold
 
 
 {-| -}
 heavy :: forall r p i. Attribute r p i
 heavy =
-    Internal.Class Flag.fontWeight (unwrap classes.textHeavy)
+    Internal.Class Flag.fontWeight classes.textHeavy
 
 
 {-| This will reset bold and italic.
 -}
 unitalicized :: forall r p i. Attribute r p i
 unitalicized =
-    Internal.htmlClass (unwrap classes.textUnitalicized)
+    Internal.htmlClass classes.textUnitalicized
 
 
 {-| -}
@@ -355,7 +356,7 @@ shadow ::
     -> Attr decorative r p i
 shadow shade =
     Internal.StyleClass Flag.txtShadows $
-        Internal.Single (Internal.textShadowClass shade) "text-shadow" (Internal.formatTextShadow shade)
+        Internal.Single (Selector (Internal.textShadowClass shade)) "text-shadow" (Internal.formatTextShadow shade)
 
 
 {-| A glow is just a simplified shadow.
@@ -370,7 +371,7 @@ glow clr i =
             }
     in
     Internal.StyleClass Flag.txtShadows $
-        Internal.Single (Internal.textShadowClass shade) "text-shadow" (Internal.formatTextShadow shade)
+        Internal.Single (Selector (Internal.textShadowClass shade)) "text-shadow" (Internal.formatTextShadow shade)
 
 
 
@@ -396,14 +397,14 @@ variant :: forall r p i. Variant -> Attribute r p i
 variant var =
     case var of
         Internal.VariantActive name ->
-            Internal.Class Flag.fontVariant ("v-" <> name)
+            Internal.Class Flag.fontVariant (ClassName ("v-" <> name))
 
         Internal.VariantOff name ->
-            Internal.Class Flag.fontVariant ("v-" <> name <> "-off")
+            Internal.Class Flag.fontVariant (ClassName ("v-" <> name <> "-off"))
 
         Internal.VariantIndexed name index ->
             Internal.StyleClass Flag.fontVariant $
-                Internal.Single ("v-" <> name <> "-" <> Int.toStringAs Int.decimal index)
+                Internal.Single (Selector ("v-" <> name <> "-" <> Int.toStringAs Int.decimal index))
                     "font-feature-settings"
                     ("\"" <> name <> "\" " <> Int.toStringAs Int.decimal index)
 

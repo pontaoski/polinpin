@@ -205,6 +205,7 @@ import Data.Maybe (Maybe(..))
 import Data.Array ((:))
 import Data.Array as Array
 import Halogen.HTML.Properties as HP
+import Halogen.HTML (ClassName(..))
 import Data.Newtype (unwrap, wrap)
 import Web.UIEvent.MouseEvent (MouseEvent)
 
@@ -360,15 +361,12 @@ button attrs { onPress, label } =
         Internal.div_
         (Element.width Element.shrink
             : Element.height Element.shrink
-            : Internal.htmlClass
-                (unwrap classes.contentCenterX
-                    <> " "
-                    <> unwrap classes.contentCenterY
-                    <> " "
-                    <> unwrap classes.seButton
-                    <> " "
-                    <> unwrap classes.noTextSelection
-                )
+            : Internal.htmlClasses
+                [ classes.contentCenterX
+                    ,  classes.contentCenterY
+                    ,  classes.seButton
+                    ,  classes.noTextSelection
+                ]
             : Element.pointer
             : focusDefault attrs
             : Internal.Describe Internal.Button
@@ -401,7 +399,7 @@ focusDefault attrs =
         Internal.NoAttribute
 
     else
-        Internal.htmlClass "focusable"
+        Internal.htmlClass (ClassName "focusable")
 
 
 hasFocusStyle attr =

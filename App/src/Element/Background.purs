@@ -22,6 +22,7 @@ import Prelude
 import Element (Attr, Attribute, Color)
 import Element.Internal.Flag as Flag
 import Element.Internal.Model as Internal
+import Element.Internal.Style (Selector(..))
 import Halogen.HTML (IProp(..))
 import Halogen.HTML.Properties as HP
 import Data.List as List
@@ -139,7 +140,7 @@ gradient { angle, steps: asteps } =
 
         _ ->
             Internal.StyleClass Flag.bgGradient $
-                Internal.Single ("bg-grad-" <> (String.joinWith "-" $ Array.fromFoldable $ Internal.floatClass angle : map Internal.formatColorClass steps))
+                Internal.Single (Selector $ "bg-grad-" <> (String.joinWith "-" $ Array.fromFoldable $ Internal.floatClass angle : map Internal.formatColorClass steps))
                     "background-image"
                     ("linear-gradient(" <> (String.joinWith ", " $ Array.fromFoldable $ (NumberFormat.toString angle <> "rad") : map Internal.formatColor steps) <> ")")
 

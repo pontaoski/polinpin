@@ -213,13 +213,11 @@ type Option =
 layoutWith :: forall aligned r p i . { options :: Array Option } -> Array (Attribute r p i) -> Element p i -> HH.HTML p i
 layoutWith { options } attrs child =
     Internal.renderRoot options
-        (Internal.htmlClass
-            (String.joinWith " "
-                [ unwrap classes.root
-                , unwrap classes.any
-                , unwrap classes.single
-                ]
-            )
+        (Internal.htmlClasses
+            [ classes.root
+            , classes.any
+            , classes.single
+            ]
             `Array.cons` (Internal.rootStyle <> attrs)
         )
         child
@@ -241,8 +239,8 @@ row attrs children =
     Internal.element
         Internal.asRow
         Internal.div_
-        (Internal.htmlClass
-            (unwrap classes.contentLeft <> " " <> unwrap classes.contentCenterY)
+        (Internal.htmlClasses
+            [classes.contentLeft, classes.contentCenterY]
             : width shrink
             : height shrink
             : attrs
@@ -255,11 +253,8 @@ column attrs children =
     Internal.element
         Internal.asColumn
         Internal.div_
-        (Internal.htmlClass
-            (unwrap classes.contentTop
-                <> " "
-                <> unwrap classes.contentLeft
-            )
+        (Internal.htmlClasses
+            [classes.contentTop, classes.contentLeft]
             : height shrink
             : width shrink
             : attrs
@@ -317,24 +312,24 @@ el attrs child =
 -}
 pointer :: forall r p i. Attribute r p i
 pointer =
-    Internal.Class Flag.cursor (unwrap classes.cursorPointer)
+    Internal.Class Flag.cursor (classes.cursorPointer)
 
 {-| -}
 scrollbars :: forall r p i. Attribute r p i
 scrollbars =
-    Internal.Class Flag.overflow (unwrap classes.scrollbars)
+    Internal.Class Flag.overflow (classes.scrollbars)
 
 
 {-| -}
 scrollbarY :: forall r p i. Attribute r p i
 scrollbarY =
-    Internal.Class Flag.overflow (unwrap classes.scrollbarsY)
+    Internal.Class Flag.overflow (classes.scrollbarsY)
 
 
 {-| -}
 scrollbarX :: forall r p i. Attribute r p i
 scrollbarX =
-    Internal.Class Flag.overflow (unwrap classes.scrollbarsX)
+    Internal.Class Flag.overflow (classes.scrollbarsX)
 
 {-| -}
 padding :: forall r p i. Int -> Attribute r p i
@@ -452,7 +447,7 @@ alignRight =
 {-| -}
 spaceEvenly :: forall r p i. Attribute r p i
 spaceEvenly =
-    Internal.Class Flag.spacing (unwrap Style.classes.spaceEvenly)
+    Internal.Class Flag.spacing (Style.classes.spaceEvenly)
 
 
 {-| -}

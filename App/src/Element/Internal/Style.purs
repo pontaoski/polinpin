@@ -15,8 +15,11 @@ newtype Selector = Selector String
 derive instance selectorNewtype :: Newtype Selector _
 derive newtype instance selectorSemigroup :: Semigroup Selector
 
-appendClassname :: ClassName -> ClassName -> ClassName
-appendClassname a b = ClassName (unwrap a <> unwrap b)
+containing (Selector a) (Selector b) =
+    Selector (a <> " " <> b)
+
+concatClassNames (ClassName a) (ClassName b) =
+    ClassName (a <> b)
 
 data Class
     = Class Selector (Array Rule)
@@ -263,7 +266,7 @@ renderRules (Intermediate parent) rulesToRender =
                     rendered { 
                         others =
                             renderRules
-                                (emptyIntermediate (parent.selector <> Selector " " <> child) "")
+                                (emptyIntermediate (parent.selector `containing` child) "")
                                 childRules
                                 `cons` rendered.others
                     }
@@ -454,6 +457,10 @@ classes =
 
 dot :: ClassName -> Selector
 dot (ClassName c) =
+    Selector $ "." <> c
+
+dot' :: Selector -> Selector
+dot' (Selector c) =
     Selector $ "." <> c
 
 data Alignment
@@ -803,22 +810,22 @@ baseSheet =
         , Descriptor (dot classes.opaque)
             [ Prop "opacity" "1"
             ]
-        , Descriptor (dot (classes.hover `appendClassname` classes.transparent) <> Selector ":hover")
+        , Descriptor (dot (classes.hover `concatClassNames` classes.transparent) <> Selector ":hover")
             [ Prop "opacity" "0"
             ]
-        , Descriptor (dot (classes.hover `appendClassname` classes.opaque) <> Selector ":hover")
+        , Descriptor (dot (classes.hover `concatClassNames` classes.opaque) <> Selector ":hover")
             [ Prop "opacity" "1"
             ]
-        , Descriptor (dot (classes.focus `appendClassname` classes.transparent) <> Selector ":focus")
+        , Descriptor (dot (classes.focus `concatClassNames` classes.transparent) <> Selector ":focus")
             [ Prop "opacity" "0"
             ]
-        , Descriptor (dot (classes.focus `appendClassname` classes.opaque) <> Selector ":focus")
+        , Descriptor (dot (classes.focus `concatClassNames` classes.opaque) <> Selector ":focus")
             [ Prop "opacity" "1"
             ]
-        , Descriptor (dot (classes.active `appendClassname` classes.transparent) <> Selector ":active")
+        , Descriptor (dot (classes.active `concatClassNames` classes.transparent) <> Selector ":active")
             [ Prop "opacity" "0"
             ]
-        , Descriptor (dot (classes.active `appendClassname` classes.opaque) <> Selector ":active")
+        , Descriptor (dot (classes.active `concatClassNames` classes.opaque) <> Selector ":active")
             [ Prop "opacity" "1"
             ]
         , Descriptor (dot classes.transition)

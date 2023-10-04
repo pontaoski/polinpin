@@ -144,7 +144,7 @@ data Style
     | FontFamily String (Array Font)
     | FontSize Int
       -- classname, prop, value
-    | Single String String String
+    | Single Selector String String
     | Colored String String Color
     | SpacingStyle String Int Int
     | BorderWidth String Int Int Int Int
@@ -224,7 +224,7 @@ data Attribute aligned (r :: Row Type) p i
     | Attr (HH.IProp r i)
     | Describe Description
       -- invalidation key and literal class
-    | Class Flag String
+    | Class Flag ClassName
       -- invalidation key "border-color" as opposed to "border-color-10-10-10" that will be the key for the class
     | StyleClass Flag Style
     | AlignY VAlign
@@ -609,16 +609,20 @@ addKeyedChildren key existing nearbyChildren =
                 <> existing
                 <> map (\x -> (Tuple key x)) inFront
 
-rowClass = classes.any `EStyle.appendClassname` (ClassName " ") `EStyle.appendClassname` classes.row
-columnClass = classes.any `EStyle.appendClassname` (ClassName " ") `EStyle.appendClassname` classes.column
-singleClass = classes.any `EStyle.appendClassname` (ClassName " ") `EStyle.appendClassname` classes.single
-gridClass = classes.any `EStyle.appendClassname` (ClassName " ") `EStyle.appendClassname` classes.grid
-paragraphClass = classes.any `EStyle.appendClassname` (ClassName " ") `EStyle.appendClassname` classes.paragraph
-pageClass = classes.any `EStyle.appendClassname` (ClassName " ") `EStyle.appendClassname` classes.page
+rowClass = [classes.any, classes.row]
+columnClass = [classes.any, classes.column]
+singleClass = [classes.any, classes.single]
+gridClass = [classes.any, classes.grid]
+paragraphClass = [classes.any, classes.paragraph]
+pageClass = [classes.any, classes.page]
 
-htmlClass :: forall aligned r p i. String -> Attribute aligned r p i
+htmlClass :: forall aligned r p i. ClassName -> Attribute aligned r p i
 htmlClass cls =
-    Attr (HP.class_ (ClassName cls) # unwrap # wrap)
+    Attr (HP.class_ cls # unwrap # wrap)
+
+htmlClasses :: forall aligned r p i. Array ClassName -> Attribute aligned r p i
+htmlClasses cls =
+    Attr (HP.classes cls # unwrap # wrap)
 
 contextClasses context =
     case context of
@@ -1098,7 +1102,7 @@ renderStyleRule options rule maybePseudo =
         Single klass prop val ->
             renderStyle options
                 maybePseudo
-                ("." <> klass)
+                (unwrap (EStyle.dot' klass))
                 [ Property prop val
                 ]
 
@@ -1441,7 +1445,7 @@ renderStyleRule options rule maybePseudo =
                 (Tuple (Just cls) (Just v)) ->
                     renderStyle options
                         maybePseudo
-                        ("." <> cls)
+                        ("." <> unwrap cls)
                         [ Property "transform"
                             v
                         ]
@@ -2073,7 +2077,7 @@ finalizeNode has node attributes children embedMode parentContext =
 
 type Sizing =
     { fields :: Flag.Field
-    , klass :: ClassName
+    , classes :: Array ClassName
     , styles :: Array Style
     }
 
@@ -2089,33 +2093,33 @@ renderHeight h =
                     "height-px-" <> val
             in
             { fields: Flag.none
-            , klass: EStyle.classes.heightExact `EStyle.appendClassname` ClassName " " `EStyle.appendClassname` ClassName name
-            , styles: [ Single name "height" (val <> "px") ]
+            , classes: [EStyle.classes.heightExact, ClassName name]
+            , styles: [ Single (Selector name) "height" (val <> "px") ]
             }
 
         Content ->
             { fields: Flag.add Flag.heightContent Flag.none
-            , klass: EStyle.classes.heightContent
+            , classes: [EStyle.classes.heightContent]
             , styles: []
             }
 
         Fill portion ->
             if portion == 1 then
                 { fields: Flag.add Flag.heightFill Flag.none
-                , klass: EStyle.classes.heightFill
+                , classes: [EStyle.classes.heightFill]
                 , styles: []
                 }
 
             else
                 { fields: Flag.add Flag.heightFill Flag.none
-                , klass: EStyle.classes.heightFillPortion `EStyle.appendClassname` ClassName " height-fill-" `EStyle.appendClassname` ClassName (toStringAs decimal portion)
+                , classes: [EStyle.classes.heightFillPortion, ClassName "height-fill-" `EStyle.concatClassNames` ClassName (toStringAs decimal portion)]
                 , styles: [ Single
-                        (unwrap (EStyle.classes.any
-                                                    `EStyle.appendClassname` ClassName "."
-                                                    `EStyle.appendClassname` EStyle.classes.column
-                                                    `EStyle.appendClassname` ClassName " > "
-                                                    `EStyle.appendClassname` ClassName (unwrap (EStyle.dot $ ClassName "height-fill-" `EStyle.appendClassname` ClassName (toStringAs decimal portion)))
-                                                ))
+                        (Selector (unwrap EStyle.classes.any
+                                <> "."
+                                <> unwrap EStyle.classes.column
+                                <> " > "
+                                <> unwrap (EStyle.dot $ ClassName "height-fill-" `EStyle.concatClassNames` ClassName (toStringAs decimal portion))
+                            ))
                         "flex-grow"
                         (toStringAs decimal (portion * 100000))
                   ]
@@ -2129,17 +2133,17 @@ renderHeight h =
 
                 style =
                     Single
-                        cls
+                        (Selector cls)
                         "min-height"
                         -- This needs to be !important because we're using `min-height: min-content`
                         -- to correct for safari's incorrect implementation of flexbox.
                         (toStringAs decimal minSize <> "px !important")
 
-                { fields: newFlag, klass: newAttrs, styles: newStyle } =
+                { fields: newFlag, classes: newAttrs, styles: newStyle } =
                     renderHeight len
             in
             { fields: Flag.add Flag.heightBetween newFlag
-            , klass: ClassName cls `EStyle.appendClassname` ClassName " " `EStyle.appendClassname` newAttrs
+            , classes: ClassName cls `Array.cons` newAttrs
             , styles: style `Array.cons` newStyle
             }
 
@@ -2149,15 +2153,15 @@ renderHeight h =
                     "max-height-" <> toStringAs decimal maxSize
 
                 style =
-                    Single cls
+                    Single (Selector cls)
                         "max-height"
                         (toStringAs decimal maxSize <> "px")
 
-                { fields: newFlag, klass: newAttrs, styles: newStyle } =
+                { fields: newFlag, classes: newAttrs, styles: newStyle } =
                     renderHeight len
             in
             { fields: Flag.add Flag.heightBetween newFlag
-            , klass: ClassName cls `EStyle.appendClassname` ClassName " " `EStyle.appendClassname` newAttrs
+            , classes: ClassName cls `Array.cons` newAttrs
             , styles: style `Array.cons` newStyle
             }
 
@@ -2166,32 +2170,32 @@ renderWidth w =
     case w of
         Px px ->
             { fields: Flag.none
-            , klass: EStyle.classes.widthExact `EStyle.appendClassname` ClassName " width-px-" `EStyle.appendClassname` ClassName (toStringAs decimal px)
-            , styles: [ Single ("width-px-" <> toStringAs decimal px) "width" (toStringAs decimal px <> "px") ]
+            , classes: [EStyle.classes.widthExact, ClassName "width-px-" `EStyle.concatClassNames` ClassName (toStringAs decimal px)]
+            , styles: [ Single (Selector ("width-px-" <> toStringAs decimal px)) "width" (toStringAs decimal px <> "px") ]
             }
 
         Content ->
             { fields: Flag.add Flag.widthContent Flag.none
-            , klass: EStyle.classes.widthContent
+            , classes: [EStyle.classes.widthContent]
             , styles: []
             }
 
         Fill portion ->
             if portion == 1 then
                 { fields: Flag.add Flag.widthFill Flag.none
-                , klass: EStyle.classes.widthFill
+                , classes: [EStyle.classes.widthFill]
                 , styles: []
                 }
 
             else
                 { fields: Flag.add Flag.widthFill Flag.none
-                , klass: EStyle.classes.widthFillPortion `EStyle.appendClassname` ClassName " width-fill-" `EStyle.appendClassname` ClassName (toStringAs decimal portion)
+                , classes: [EStyle.classes.widthFillPortion, ClassName "width-fill-" `EStyle.concatClassNames` ClassName (toStringAs decimal portion)]
                 , styles: [ Single
-                        (unwrap EStyle.classes.any
+                        (Selector (unwrap EStyle.classes.any
                             <> "."
                             <> unwrap EStyle.classes.row
                             <> " > "
-                            <> unwrap (ClassName "width-fill-" `EStyle.appendClassname` ClassName (toStringAs decimal portion) # EStyle.dot)
+                            <> unwrap (ClassName "width-fill-" `EStyle.concatClassNames` ClassName (toStringAs decimal portion) # EStyle.dot))
                         )
                         "flex-grow"
                         (toStringAs decimal (portion * 100000))
@@ -2206,15 +2210,15 @@ renderWidth w =
 
                 style =
                     Single
-                        cls
+                        (Selector cls)
                         "min-width"
                         (toStringAs decimal minSize <> "px")
 
-                { fields: newFlag, klass: newAttrs, styles: newStyle } =
+                { fields: newFlag, classes: newAttrs, styles: newStyle } =
                     renderWidth len
             in
             { fields: Flag.add Flag.widthBetween newFlag
-            , klass: ClassName (cls <> " " <> unwrap newAttrs)
+            , classes: ClassName cls `Array.cons` newAttrs
             , styles: style `Array.cons` newStyle
             }
 
@@ -2224,15 +2228,15 @@ renderWidth w =
                     "max-width-" <> toStringAs decimal maxSize
 
                 style =
-                    Single cls
+                    Single (Selector cls)
                         "max-width"
                         (toStringAs decimal maxSize <> "px")
 
-                { fields: newFlag, klass: newAttrs, styles: newStyle } =
+                { fields: newFlag, classes: newAttrs, styles: newStyle } =
                     renderWidth len
             in
             { fields: Flag.add Flag.widthBetween newFlag
-            , klass: (ClassName cls `EStyle.appendClassname` ClassName " " `EStyle.appendClassname` newAttrs)
+            , classes: ClassName cls `Array.cons` newAttrs
             , styles: style `Array.cons` newStyle
             }
 
@@ -2290,7 +2294,7 @@ getStyleName style =
         FontSize i ->
             "font-size-" <> toStringAs decimal i
 
-        Single klass _ _ ->
+        Single (Selector klass) _ _ ->
             klass
 
         Colored klass _ _ ->
@@ -2351,16 +2355,16 @@ getStyleName style =
                 # String.joinWith " "
 
         Transform x ->
-            Maybe.fromMaybe "" (transformClass x)
+            Maybe.fromMaybe "" (map unwrap (transformClass x))
 
-transformClass :: Transformation -> Maybe String
+transformClass :: Transformation -> Maybe ClassName
 transformClass transform =
     case transform of
         Untransformed ->
             Nothing
 
         Moved (XYZ x y z) ->
-            Just $
+            Just $ ClassName $
                 "mv-"
                     <> floatClass x
                     <> "-"
@@ -2369,7 +2373,7 @@ transformClass transform =
                     <> floatClass z
 
         FullTransform (XYZ tx ty tz) (XYZ sx sy sz) (XYZ ox oy oz) angle ->
-            Just $
+            Just $ ClassName $
                 "tfrm-"
                     <> floatClass tx
                     <> "-"
@@ -2604,30 +2608,30 @@ addNearbyElement location elem existing =
                 _ ->
                     ChildrenBehindAndInFront existingBehind (nearby `Array.cons` existingInFront)
 
-alignXName :: HAlign -> String
+alignXName :: HAlign -> Array ClassName
 alignXName align =
     case align of
         Left ->
-            unwrap classes.alignedHorizontally <> " " <> unwrap classes.alignLeft
+            [classes.alignedHorizontally, classes.alignLeft]
 
         Right ->
-            unwrap classes.alignedHorizontally <> " " <> unwrap classes.alignRight
+            [classes.alignedHorizontally, classes.alignRight]
 
         CenterX ->
-            unwrap classes.alignedHorizontally <> " " <> unwrap classes.alignCenterX
+            [classes.alignedHorizontally, classes.alignCenterX]
 
 
-alignYName :: VAlign -> String
+alignYName :: VAlign -> Array ClassName
 alignYName align =
     case align of
         Top ->
-            unwrap classes.alignedVertically <> " " <> unwrap classes.alignTop
+            [classes.alignedVertically, classes.alignTop]
 
         Bottom ->
-            unwrap classes.alignedVertically <> " " <> unwrap classes.alignBottom
+            [classes.alignedVertically, classes.alignBottom]
 
         CenterY ->
-            unwrap classes.alignedVertically <> " " <> unwrap classes.alignCenterY
+            [classes.alignedVertically, classes.alignCenterY]
 
 fongle :: forall r i . ClassName -> IProp r i
 fongle className =
@@ -2637,8 +2641,12 @@ foo :: forall r i . ClassName -> List (IProp (class :: String | r) i) -> List (I
 foo className attrs =
     (HP.class_ className) : attrs
 
+genericise :: forall r1 r2 i . IProp r1 i -> IProp r2 i
+genericise iprop =
+    wrap (unwrap iprop)
+
 gatherAttrRecursive :: forall aligned r p i .
-    ClassName
+    Array ClassName
     -> NodeName
     -> Flag.Field
     -> Transformation
@@ -2652,7 +2660,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
         Nil ->
             case transformClass transform of
                 Nothing ->
-                    { attributes: Array.fromFoldable $ (HP.class_ classes # unwrap # wrap) : attrs
+                    { attributes: Array.fromFoldable $ (genericise (HP.classes classes # unwrap # wrap)) : attrs
                     , styles: styles
                     , node: node
                     , children: children
@@ -2660,7 +2668,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                     }
 
                 Just klass ->
-                    { attributes: Array.fromFoldable $ (HP.class_ (wrap (unwrap classes <> " " <> klass)) # unwrap # wrap) : attrs
+                    { attributes: Array.fromFoldable $ (genericise (HP.classes $ klass `Array.cons` classes)) : attrs
                     , styles: Transform transform `Array.cons` styles
                     , node: node
                     , children: children
@@ -2677,7 +2685,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                         gatherAttrRecursive classes node has transform styles attrs children remaining
 
                     else
-                        gatherAttrRecursive (wrap $ exactClassName <> " " <> unwrap classes) node (Flag.add flag has) transform styles attrs children remaining
+                        gatherAttrRecursive (exactClassName `Array.cons` classes) node (Flag.add flag has) transform styles attrs children remaining
 
                 Attr actualAttribute ->
                     gatherAttrRecursive classes node has transform styles (actualAttribute : attrs) children remaining
@@ -2687,7 +2695,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                         gatherAttrRecursive classes node has transform styles attrs children remaining
 
                     else if skippable flag style then
-                        gatherAttrRecursive (wrap (getStyleName style <> " " <> unwrap classes))
+                        gatherAttrRecursive (wrap (getStyleName style) `Array.cons` classes)
                             node
                             (Flag.add flag has)
                             transform
@@ -2697,7 +2705,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                             remaining
 
                     else
-                        gatherAttrRecursive (wrap (getStyleName style <> " " <> unwrap classes))
+                        gatherAttrRecursive (wrap (getStyleName style) `Array.cons` classes)
                             node
                             (Flag.add flag has)
                             transform
@@ -2723,17 +2731,17 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                     else
                         case width of
                             Px px ->
-                                gatherAttrRecursive (wrap ((unwrap EStyle.classes.widthExact <> " width-px-" <> toStringAs decimal px) <> " " <> unwrap classes))
+                                gatherAttrRecursive (EStyle.classes.widthExact `Array.cons` (ClassName ("width-px-" <> toStringAs decimal px) `Array.cons` classes))
                                     node
                                     (Flag.add Flag.width has)
                                     transform
-                                    (Single ("width-px-" <> toStringAs decimal px) "width" (toStringAs decimal px <> "px") `Array.cons` styles)
+                                    (Single (Selector $ "width-px-" <> toStringAs decimal px) "width" (toStringAs decimal px <> "px") `Array.cons` styles)
                                     attrs
                                     children
                                     remaining
 
                             Content ->
-                                gatherAttrRecursive (wrap (unwrap classes <> " " <> unwrap EStyle.classes.widthContent))
+                                gatherAttrRecursive (EStyle.classes.widthContent `Array.cons` classes)
                                     node
                                     (Flag.add Flag.widthContent (Flag.add Flag.width has))
                                     transform
@@ -2744,7 +2752,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
 
                             Fill portion ->
                                 if portion == 1 then
-                                    gatherAttrRecursive (wrap (unwrap classes <> " " <> unwrap EStyle.classes.widthFill))
+                                    gatherAttrRecursive (EStyle.classes.widthFill `Array.cons` classes)
                                         node
                                         (Flag.add Flag.widthFill (Flag.add Flag.width has))
                                         transform
@@ -2754,12 +2762,12 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                                         remaining
 
                                 else
-                                    gatherAttrRecursive (wrap (unwrap classes <> " " <> unwrap EStyle.classes.widthFillPortion <> " width-fill-" <> toStringAs decimal portion))
+                                    gatherAttrRecursive ((ClassName ("width-fill-" <> toStringAs decimal portion)) `Array.cons` (EStyle.classes.widthFillPortion `Array.cons` classes))
                                         node
                                         (Flag.add Flag.widthFill (Flag.add Flag.width has))
                                         transform
                                         (Single
-                                            ((unwrap EStyle.classes.any
+                                            (Selector (unwrap EStyle.classes.any
                                                     <> "."
                                                     <> unwrap EStyle.classes.row
                                                     <> " > "
@@ -2775,10 +2783,10 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
 
                             _ ->
                                 let
-                                    { fields: addToFlags, klass: newClass, styles: newStyles } =
+                                    { fields: addToFlags, classes: newClass, styles: newStyles } =
                                         renderWidth width
                                 in
-                                gatherAttrRecursive (wrap (unwrap classes <> " " <> unwrap newClass))
+                                gatherAttrRecursive (newClass <> classes)
                                     node
                                     (Flag.merge addToFlags (Flag.add Flag.width has))
                                     transform
@@ -2801,17 +2809,17 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                                     name =
                                         "height-px-" <> val
                                 in
-                                gatherAttrRecursive (wrap (unwrap EStyle.classes.heightExact <> " " <> name <> " " <> unwrap classes))
+                                gatherAttrRecursive (EStyle.classes.heightExact `Array.cons` ((ClassName name) `Array.cons` classes))
                                     node
                                     (Flag.add Flag.height has)
                                     transform
-                                    (Single name "height " val `Array.cons` styles)
+                                    (Single (Selector name) "height " val `Array.cons` styles)
                                     attrs
                                     children
                                     remaining
 
                             Content ->
-                                gatherAttrRecursive (wrap (unwrap EStyle.classes.heightContent <> " " <> unwrap classes))
+                                gatherAttrRecursive (EStyle.classes.heightContent `Array.cons` classes)
                                     node
                                     (Flag.add Flag.heightContent (Flag.add Flag.height has))
                                     transform
@@ -2822,7 +2830,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
 
                             Fill portion ->
                                 if portion == 1 then
-                                    gatherAttrRecursive (wrap (unwrap EStyle.classes.heightFill <> " " <> unwrap classes))
+                                    gatherAttrRecursive (EStyle.classes.heightFill `Array.cons` classes)
                                         node
                                         (Flag.add Flag.heightFill (Flag.add Flag.height has))
                                         transform
@@ -2832,12 +2840,12 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                                         remaining
 
                                 else
-                                    gatherAttrRecursive (wrap (unwrap classes <> " " <> (unwrap EStyle.classes.heightFillPortion <> " height-fill-" <> toStringAs decimal portion)))
+                                    gatherAttrRecursive (EStyle.classes.heightFillPortion `Array.cons` ((ClassName ("height-fill-" <> toStringAs decimal portion)) `Array.cons` classes))
                                         node
                                         (Flag.add Flag.heightFill (Flag.add Flag.height has))
                                         transform
                                         (Single
-                                            (unwrap EStyle.classes.any
+                                            (Selector $ unwrap EStyle.classes.any
                                                 <> "."
                                                 <> unwrap EStyle.classes.column
                                                 <> " > "
@@ -2853,10 +2861,10 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
 
                             _ ->
                                 let
-                                    { fields: addToFlags, klass: newClass, styles: newStyles } =
+                                    { fields: addToFlags, classes: newClass, styles: newStyles } =
                                         renderHeight height
                                 in
-                                gatherAttrRecursive (wrap (unwrap classes <> " " <> unwrap newClass))
+                                gatherAttrRecursive (newClass <> classes)
                                     node
                                     (Flag.merge addToFlags (Flag.add Flag.height has))
                                     transform
@@ -2949,7 +2957,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                         gatherAttrRecursive classes node has transform styles attrs children remaining
 
                     else
-                        gatherAttrRecursive (wrap (alignXName x <> " " <> unwrap classes))
+                        gatherAttrRecursive (alignXName x <> classes)
                             node
                             (has
                                 # Flag.add Flag.xAlign
@@ -2976,7 +2984,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                         gatherAttrRecursive classes node has transform styles attrs children remaining
 
                     else
-                        gatherAttrRecursive (wrap (alignYName y <> " " <> unwrap classes))
+                        gatherAttrRecursive (alignYName y <> classes)
                             node
                             (Flag.add Flag.yAlign has
                                 # (\flags ->
