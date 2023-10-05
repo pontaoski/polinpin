@@ -8,6 +8,8 @@ import Polinpin.UI as UI
 import Data.Maybe (Maybe(..))
 import Data.Array as Array
 import Halogen.HTML as HH
+import Polinpin.Interfaces as Interfaces
+import Polinpin.Interfaces (Route(..), AuthenticatedRoute(..), UnauthenticatedRoute(..))
 
 type View p i =
     { title :: String
@@ -46,12 +48,19 @@ shadedRow attrs =
         [ padding 10, behindContent $ UI.grayBox [ width fill, height fill ] none ] <> attrs
 
 header :: forall p i. Polinpin.Store.Store -> String -> Element p i
-header _store title =
+header store title =
     row [ padding 10, width fill ]
         [ shadedRow [ alignLeft ]
             [ UI.link [] { url: "/", label: text "Polinpin" }
             ]
         , el [ centerX ] (text title)
         , shadedRow [ alignRight, spacing 20 ]
-            [ text "not implemented" ]
+            case store.user of
+                Just _ ->
+                    [ UI.link [] { url: Interfaces.printRoute (Authenticated MyStudies), label: text "My Studies" }
+                    ]
+                Nothing ->
+                    [ UI.link [] { url: Interfaces.printRoute (Unauthenticated Login), label: text "Login" }
+                    , UI.link [] { url: Interfaces.printRoute (Unauthenticated Register), label: text "Register" }
+                    ]
         ]

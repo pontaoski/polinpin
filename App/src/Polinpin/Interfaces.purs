@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Trans.Class (lift)
 import Halogen (HalogenM)
-import Routing.Duplex (RouteDuplex', root, string, segment, record, prop)
+import Routing.Duplex (RouteDuplex', root, string, segment, record, prop, print)
 import Routing.Duplex.Generic (noArgs, sum)
 import Routing.Duplex.Generic.Syntax ((/))
 import Data.Generic.Rep (class Generic)
@@ -32,6 +32,7 @@ derive instance ordUnauthRoute :: Ord UnauthenticatedRoute
 data AuthenticatedRoute
     = EditDesirabilityStudy UserSlug
     | EditTreeTest UserSlug
+    | MyStudies
 
 derive instance genericAuthRoute :: Generic AuthenticatedRoute _
 derive instance eqAuthRoute :: Eq AuthenticatedRoute
@@ -60,6 +61,7 @@ authenticatedCodec =
     sum
         { "EditDesirabilityStudy": "desirability-studies" / userSlug / "edit"
         , "EditTreeTest": "tree-tests" / userSlug / "edit"
+        , "MyStudies": "my-studies" / noArgs
         }
 
 routeCodec :: RouteDuplex' Route
@@ -70,6 +72,10 @@ routeCodec = root $ sum
     , "TakeDesirabilityStudy": "desirability-studies" / userSlug / "take"
     , "TakeTreeTest": "tree-tests" / userSlug / "take"
     }
+
+printRoute :: Route -> String
+printRoute =
+    print routeCodec
 
 class Monad m <= Navigation m where
     navigate :: Route -> m Unit
