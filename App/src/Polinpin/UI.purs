@@ -7,7 +7,7 @@ import Data.Number.Format as Number.Format
 import Data.Maybe (Maybe(..))
 import Halogen.HTML.Properties as HP
 import Halogen.HTML as HH
-import Web.HTML.Common (PropName(..))
+import Web.HTML.Common (AttrName(..))
 import Data.Array as Array
 import Element.Background as Background
 
@@ -60,25 +60,25 @@ paletteToAttribute :: forall r i. Palette -> Array (HH.IProp r i)
 paletteToAttribute pal =
     let
         c =
-            [ HP.prop (PropName "color") (color2string pal.background) ]
+            [ HP.attr (AttrName "color") (color2string pal.background) ]
 
         sc =
-            [ HP.prop (PropName "stroke-color") (color2string pal.stroke) ]
+            [ HP.attr (AttrName "stroke-color") (color2string pal.stroke) ]
 
         hc =
-            map (HP.prop (PropName "hover-color") <<< color2string) pal.hoverBackground
+            map (HP.attr (AttrName "hover-color") <<< color2string) pal.hoverBackground
                 # maybeToArray
 
         hsc =
-            map (HP.prop (PropName "hover-stroke-color") <<< color2string) pal.hoverStroke
+            map (HP.attr (AttrName "hover-stroke-color") <<< color2string) pal.hoverStroke
                 # maybeToArray
 
         dc =
-            map (HP.prop (PropName "down-color") <<< color2string) pal.downBackground
+            map (HP.attr (AttrName "down-color") <<< color2string) pal.downBackground
                 # maybeToArray
 
         dsc =
-            map (HP.prop (PropName "down-stroke-color") <<< color2string) pal.downStroke
+            map (HP.attr (AttrName "down-stroke-color") <<< color2string) pal.downStroke
                 # maybeToArray
     in
     c <> sc <> hc <> hsc <> dc <> dsc
@@ -87,18 +87,18 @@ box :: forall p i. Palette -> Array (Element.Attribute p i) -> Element.Element p
 box palette attrs child =
     let
         htmlEl =
-            HH.element (HH.ElemName "rough-rectangle")
-                (paletteToAttribute palette)
-                []
+            (HH.element (HH.ElemName "rough-rectangle")
+                            (paletteToAttribute palette)
+                            [])
     in
-    Element.el (Element.behindContent (Element.html htmlEl) `Array.cons` attrs) child
+    (Element.el (Element.behindContent (Element.html htmlEl) `Array.cons` attrs) child)
 
 solidBox :: forall p i. Element.Color -> Array (Element.Attribute p i) -> Element.Element p i -> Element.Element p i
 solidBox color attrs child =
     let
         htmlEl =
             HH.element (HH.ElemName "rough-rectangle")
-                [ HH.prop (PropName "color") (color2string color) ]
+                [ HH.attr (AttrName "color") (color2string color) ]
                 []
     in
     Element.el ([ Element.behindContent (Element.html htmlEl), Background.color color ] <> attrs) child
@@ -117,7 +117,6 @@ grayBox :: forall p i. Array (Element.Attribute p i) -> Element.Element p i -> E
 grayBox =
     box (palette' (Element.rgb255 225 221 210) (Element.rgb255 50 50 50) Nothing Nothing Nothing Nothing)
 
-
 blackLine :: forall p i. Array (Element.Attribute p i) -> Element.Element p i
 blackLine =
     line (palette' (Element.rgb255 0 0 0) (Element.rgb255 50 50 50) Nothing Nothing Nothing Nothing)
@@ -127,7 +126,7 @@ solidRoughBox color attrs child =
     let
         htmlEl =
             HH.element (HH.ElemName "rougher-rectangle")
-                [ HH.prop (PropName "color") (color2string color) ]
+                [ HH.attr (AttrName "color") (color2string color) ]
                 []
     in
     Element.el (Element.behindContent (Element.html htmlEl) `Array.cons` attrs) child

@@ -10,14 +10,16 @@ import Polinpin.Store as Store
 import Effect.Aff.Class (class MonadAff)
 import Routing.Duplex as RD
 import Halogen (liftEffect)
-import Routing.Hash (getHash)
 import Polinpin.Interfaces (Route(..), navigate, routeCodec, class Navigation)
 import Halogen.HTML as HH
 import Element
+import Polinpin.UI as UI
+import Element.Font as Font
 import Polinpin.DemoPage as DemoPage
 import Polinpin.SharedUI as SharedUI
 import Halogen.Store.Connect (Connected, connect)
 import Halogen.Store.Select (selectAll)
+import Debug as Debug
 
 data Query a
     = Navigate Route a
@@ -58,8 +60,11 @@ component =
     handleAction :: Action -> H.HalogenM State Action ChildSlots Void m Unit
     handleAction = case _ of
         Initialize -> do
-            initialRoute <- hush <<< (RD.parse routeCodec) <$> liftEffect getHash
-            navigate $ fromMaybe Home initialRoute
+            { store: { nav } } <- H.get
+            currentState <- liftEffect $ nav.locationState
+            let initialRoute = hush (RD.parse routeCodec (Debug.spy "path" currentState.pathname))
+            H.modify_ _ { route = initialRoute }
+            pure unit
         Receive { context } ->
             H.modify_ _ { store = context }
 
@@ -73,6 +78,8 @@ component =
 
     render :: State -> H.ComponentHTML Action ChildSlots m
     render { store, route } =
+        -- layout [] $
+            -- row [] [UI.grayBox [] $ UI.link [] { url: "owo", label: text "hi" }]
         case route of
             Just Home ->
                 SharedUI.toHTML $
@@ -88,6 +95,4 @@ component =
         
 
         -- DemoPage.main
-        -- layoutWith { options: [] } [] $
-        --     row [] [text "test", text "test", column [] [text "column", text "column"]]
         -- HH.div_ [ HH.text "Oh no! That page wasn't found." ]

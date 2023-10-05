@@ -21,27 +21,53 @@ userSlug =
         # prop (Proxy :: _ "user") (string segment)
         # prop (Proxy :: _ "slug") (string segment)
 
+data UnauthenticatedRoute
+    = Login
+    | Register
+
+derive instance genericUnauthRoute :: Generic UnauthenticatedRoute _
+derive instance eqUnauthRoute :: Eq UnauthenticatedRoute
+derive instance ordUnauthRoute :: Ord UnauthenticatedRoute
+
+data AuthenticatedRoute
+    = EditDesirabilityStudy UserSlug
+    | EditTreeTest UserSlug
+
+derive instance genericAuthRoute :: Generic AuthenticatedRoute _
+derive instance eqAuthRoute :: Eq AuthenticatedRoute
+derive instance ordAuthRoute :: Ord AuthenticatedRoute
+
 data Route
     = Home
-    | AuthLogin
-    | AuthRegister
-    | EditDesirabilityStudy UserSlug
+    | Unauthenticated UnauthenticatedRoute
+    | Authenticated AuthenticatedRoute
     | TakeDesirabilityStudy UserSlug
-    | EditTreeTest UserSlug
     | TakeTreeTest UserSlug
 
 derive instance genericRoute :: Generic Route _
 derive instance eqRoute :: Eq Route
 derive instance ordRoute :: Ord Route
 
+unauthenticatedCodec :: RouteDuplex' UnauthenticatedRoute
+unauthenticatedCodec =
+    sum
+        { "Login": "login" / noArgs
+        , "Register": "register" / noArgs
+        }
+
+authenticatedCodec :: RouteDuplex' AuthenticatedRoute
+authenticatedCodec =
+    sum
+        { "EditDesirabilityStudy": "desirability-studies" / userSlug / "edit"
+        , "EditTreeTest": "tree-tests" / userSlug / "edit"
+        }
+
 routeCodec :: RouteDuplex' Route
 routeCodec = root $ sum
     { "Home": noArgs
-    , "AuthLogin": "auth" / "login" / noArgs
-    , "AuthRegister": "auth" / "register" / noArgs
-    , "EditDesirabilityStudy": "desirability-studies" / userSlug / "edit"
+    , "Unauthenticated": "auth" / unauthenticatedCodec
+    , "Authenticated": authenticatedCodec
     , "TakeDesirabilityStudy": "desirability-studies" / userSlug / "take"
-    , "EditTreeTest": "tree-tests" / userSlug / "edit"
     , "TakeTreeTest": "tree-tests" / userSlug / "take"
     }
 

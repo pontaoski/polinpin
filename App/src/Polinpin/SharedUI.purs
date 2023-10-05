@@ -49,7 +49,7 @@ header :: forall p i. Polinpin.Store.Store -> String -> Element p i
 header _store title =
     row [ padding 10, width fill ]
         [ shadedRow [ alignLeft ]
-            [ link [] { url: "/", label: text "Polinpin" }
+            [ UI.link [] { url: "/", label: text "Polinpin" }
             ]
         , el [ centerX ] (text title)
         , shadedRow [ alignRight, spacing 20 ]
