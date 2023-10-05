@@ -33,49 +33,49 @@ import Data.Number.Format as NumberFormat
 import Data.Array as Array
 
 {-| -}
-color :: forall decorative r p i. Color -> Attr decorative r p i
+color :: forall decorative p i. Color -> Attr decorative p i
 color clr =
     Internal.StyleClass Flag.bgColor (Internal.Colored ("bg-" <> Internal.formatColorClass clr) "background-color" clr)
 
 
 {-| Resize the image to fit the containing element while maintaining proportions and cropping the overflow.
 -}
-image :: forall r p i. String -> Attribute r p i
+image :: forall p i. String -> Attribute p i
 image src =
     let style = "background: url(\"" <> src <> "\") center / cover no-repeat" in
-    Internal.Attr (wrap (unwrap (HP.style style)))
+    Internal.iprop' (HP.style style)
 
 
 {-| A centered background image that keeps its natural proportions, but scales to fit the space.
 -}
-uncropped :: forall r p i. String -> Attribute r p i
+uncropped :: forall p i. String -> Attribute p i
 uncropped src =
     let style = "background: url(\"" <> src <> "\") center / contain no-repeat" in
-    Internal.Attr (wrap (unwrap (HP.style style)))
+    Internal.iprop' (HP.style style)
 
 
 {-| Tile an image in the x and y axes.
 -}
-tiled :: forall r p i. String -> Attribute r p i
+tiled :: forall p i. String -> Attribute p i
 tiled src =
     let style = "background: url(\"" <> src <> "\") repeat" in
-    Internal.Attr (wrap (unwrap (HP.style style)))
+    Internal.iprop' (HP.style style)
 
 
 {-| Tile an image in the x axis.
 -}
-tiledX :: forall r p i. String -> Attribute r p i
+tiledX :: forall p i. String -> Attribute p i
 tiledX src =
     let style = "background: url(\"" <> src <> "\") repeat-x" in
-    Internal.Attr (wrap (unwrap (HP.style style)))
+    Internal.iprop' (HP.style style)
 
 
 {-| Tile an image in the y axis.
 -}
-tiledY :: forall r p i. String -> Attribute r p i
+tiledY :: forall p i. String -> Attribute p i
 tiledY src =
     let style = "background: url(\"" <> src <> "\") repeat-y" in
-    Internal.Attr (wrap (unwrap (HP.style style)))
+    Internal.iprop' (HP.style style)
 
 
 data Direction
@@ -122,11 +122,11 @@ The colors will be evenly spaced.
 
 -}
 gradient ::
-    forall decorative r p i.
+    forall decorative p i.
     { angle :: Number
     , steps :: Array Color
     }
-    -> Attr decorative r p i
+    -> Attr decorative p i
 gradient { angle, steps: asteps } =
     let steps = List.fromFoldable asteps
     in

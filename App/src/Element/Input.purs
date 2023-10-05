@@ -344,8 +344,8 @@ The `onPress` handler will be fired either `onClick` or when the element is focu
 **Note** If you have an icon button but want it to be accessible, consider adding a [`Region.description`](Element-Region#description), which will describe the button to screen readers.
 
 -}
-button :: forall r p i.
-    Array (Attribute r p i)
+button :: forall p i.
+    Array (Attribute p i)
     ->
         { onPress :: Maybe (MouseEvent -> i)
         , label :: Element p i
@@ -370,10 +370,10 @@ button attrs { onPress, label } =
             : Element.pointer
             : focusDefault attrs
             : Internal.Describe Internal.Button
-            : Internal.Attr (wrap (unwrap (HP.tabIndex 0)))
+            : Internal.iprop' (HP.tabIndex 0)
             : (case onPress of
                     Nothing ->
-                        Internal.Attr (wrap (unwrap (HP.disabled true))) : attrs
+                        Internal.iprop' (HP.disabled true) : attrs
 
                     Just msg ->
                         Events.onClick msg

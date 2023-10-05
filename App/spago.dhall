@@ -42,6 +42,7 @@ to generate this file without the comments in this block.
   , "tuples"
   , "unsafe-coerce"
   , "web-events"
+  , "web-html"
   , "web-uievents"
   ]
 , packages = ./packages.dhall

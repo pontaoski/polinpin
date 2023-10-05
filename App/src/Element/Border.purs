@@ -45,7 +45,7 @@ import Data.Int as Int
 import Data.Newtype (unwrap)
 
 {-| -}
-color :: forall decorative r p i. Color -> Attr decorative r p i
+color :: forall decorative p i. Color -> Attr decorative p i
 color clr =
     Internal.StyleClass
         Flag.borderColor
@@ -57,7 +57,7 @@ color clr =
 
 
 {-| -}
-width :: forall r p i. Int -> Attribute r p i
+width :: forall p i. Int -> Attribute p i
 width v =
     Internal.StyleClass
         Flag.borderWidth
@@ -72,7 +72,7 @@ width v =
 
 {-| Set horizontal and vertical borders.
 -}
-widthXY :: forall r p i. Int -> Int -> Attribute r p i
+widthXY :: forall p i. Int -> Int -> Attribute p i
 widthXY x y =
     Internal.StyleClass
         Flag.borderWidth
@@ -90,13 +90,13 @@ widthXY x y =
 
 
 {-| -}
-widthEach :: forall r p i.
+widthEach :: forall p i.
     { bottom :: Int
     , left :: Int
     , right :: Int
     , top :: Int
     }
-    -> Attribute r p i
+    -> Attribute p i
 widthEach { bottom, top, left, right } =
     if top == bottom && left == right then
         if top == right then
@@ -133,26 +133,26 @@ widthEach { bottom, top, left, right } =
 
 
 {-| -}
-solid :: forall r p i. Attribute r p i
+solid :: forall p i. Attribute p i
 solid =
     Internal.Class Flag.borderStyle classes.borderSolid
 
 
 {-| -}
-dashed :: forall r p i. Attribute r p i
+dashed :: forall p i. Attribute p i
 dashed =
     Internal.Class Flag.borderStyle classes.borderDashed
 
 
 {-| -}
-dotted :: forall r p i. Attribute r p i
+dotted :: forall p i. Attribute p i
 dotted =
     Internal.Class Flag.borderStyle classes.borderDotted
 
 
 {-| Round all corners.
 -}
-rounded :: forall r p i. Int -> Attribute r p i
+rounded :: forall p i. Int -> Attribute p i
 rounded radius =
     Internal.StyleClass
         Flag.borderRound
@@ -164,13 +164,13 @@ rounded radius =
 
 
 {-| -}
-roundEach :: forall r p i.
+roundEach :: forall p i.
     { topLeft :: Int
     , topRight :: Int
     , bottomLeft :: Int
     , bottomRight :: Int
     }
-    -> Attribute r p i
+    -> Attribute p i
 roundEach { topLeft, topRight, bottomLeft, bottomRight } =
     Internal.StyleClass Flag.borderRound
         (Internal.Single
@@ -197,7 +197,7 @@ roundEach { topLeft, topRight, bottomLeft, bottomRight } =
 
 {-| A simple glow by specifying the color and size.
 -}
-glow :: forall decorative r p i. Color -> Number -> Attr decorative r p i
+glow :: forall decorative p i. Color -> Number -> Attr decorative p i
 glow clr size =
     shadow
         { offset: (Tuple 0.0 0.0)
@@ -208,7 +208,7 @@ glow clr size =
 
 
 {-| -}
-innerGlow :: forall decorative r p i. Color -> Number -> Attr decorative r p i
+innerGlow :: forall decorative p i. Color -> Number -> Attr decorative p i
 innerGlow clr size =
     innerShadow
         { offset: (Tuple 0.0 0.0)
@@ -219,13 +219,13 @@ innerGlow clr size =
 
 
 {-| -}
-shadow :: forall decorative r p i.
+shadow :: forall decorative p i.
     { offset :: (Tuple Number Number)
     , size :: Number
     , blur :: Number
     , color :: Color
     }
-    -> Attr decorative r p i
+    -> Attr decorative p i
 shadow almostShade =
     let
         shade =
@@ -244,13 +244,13 @@ shadow almostShade =
 
 
 {-| -}
-innerShadow :: forall decorative r p i.
+innerShadow :: forall decorative p i.
     { offset :: (Tuple Number Number)
     , size :: Number
     , blur :: Number
     , color :: Color
     }
-    -> Attr decorative r p i
+    -> Attr decorative p i
 innerShadow almostShade =
     let
         shade =

@@ -5,6 +5,7 @@ import Prelude
 import Data.List (List)
 import Halogen.HTML.Core (HTML)
 import Halogen.HTML as HH
+import Halogen.HTML.Properties as HP
 import Data.Int (toNumber)
 import Data.Int as Int
 import Data.Array as Array
@@ -113,18 +114,18 @@ type Element p i =
 
 {-| An attribute that can be attached to an `Element`
 -}
-type Attribute r p i =
-    Internal.Attribute Unit r p i
+type Attribute p i =
+    Internal.Attribute Unit p i
 
 {-| This is a special attribute that counts as both a `Attribute msg` and a `Decoration`.
 -}
-type Attr decorative r p i =
-    Internal.Attribute decorative r p i
+type Attr decorative p i =
+    Internal.Attribute decorative p i
 
 {-| Only decorations
 -}
-type Decoration r =
-    Internal.Attribute Void r Void Void
+type Decoration =
+    Internal.Attribute Void Void Void
 
 {-| -}
 html :: forall p i . HTML p i -> Element p i
@@ -132,9 +133,9 @@ html =
     Internal.unstyled
 
 {-| -}
-htmlAttribute :: forall r p i . HH.IProp r i -> Attribute r p i
+htmlAttribute :: forall r p i . HH.IProp r i -> Attribute p i
 htmlAttribute =
-    Internal.Attr
+    unwrap >>> Internal.Attr
 
 {-| -}
 type Length = Internal.Length
@@ -202,7 +203,7 @@ fillPortion =
 
 {-| This is your top level node where you can turn `Element` into `Html`.
 -}
-layout :: forall r p i . Array (Attribute r p i) -> Element p i -> HH.HTML p i
+layout :: forall p i . Array (Attribute p i) -> Element p i -> HH.HTML p i
 layout =
     layoutWith { options: [] }
 
@@ -211,7 +212,7 @@ type Option =
     Internal.Option
 
 {-| -}
-layoutWith :: forall r p i . { options :: Array Option } -> Array (Attribute r p i) -> Element p i -> HH.HTML p i
+layoutWith :: forall p i . { options :: Array Option } -> Array (Attribute p i) -> Element p i -> HH.HTML p i
 layoutWith { options } attrs child =
     Internal.renderRoot options
         (Internal.htmlClasses
@@ -224,7 +225,7 @@ layoutWith { options } attrs child =
         child
 
 {-| -}
-width :: forall r p i. Length -> Attribute r p i
+width :: forall p i. Length -> Attribute p i
 width =
     Internal.Width
 
@@ -238,17 +239,17 @@ width =
         (text "Help, I'm being debugged!")
 
 -}
-explain :: forall r p i. Attribute r p i
+explain :: forall p i. Attribute p i
 explain =
     Internal.htmlClass (HH.ClassName "explain")
 
 {-| -}
-height :: forall r p i. Length -> Attribute r p i
+height :: forall p i. Length -> Attribute p i
 height =
     Internal.Height
 
 {-| -}
-row :: forall r p i. Array (Attribute r p i) -> Array (Element p i) -> Element p i
+row :: forall p i. Array (Attribute p i) -> Array (Element p i) -> Element p i
 row attrs children =
     Internal.element
         Internal.asRow
@@ -262,7 +263,7 @@ row attrs children =
         (Internal.Unkeyed children)
 
 {-| -}
-column :: forall r p i. Array (Attribute r p i) -> Array (Element p i) -> Element p i
+column :: forall p i. Array (Attribute p i) -> Array (Element p i) -> Element p i
 column attrs children =
     Internal.element
         Internal.asColumn
@@ -311,7 +312,7 @@ If you want multiple children, you'll need to use something like `row` or `colum
             (Element.text "You've made a stylish element!")
 
 -}
-el :: forall r p i. Array (Attribute r p i) -> Element p i -> Element p i
+el :: forall p i. Array (Attribute p i) -> Element p i -> Element p i
 el attrs child =
     Internal.element
         Internal.asEl
@@ -324,29 +325,29 @@ el attrs child =
 
 {-| Set the cursor to be a pointing hand when it's hovering over this element.
 -}
-pointer :: forall r p i. Attribute r p i
+pointer :: forall p i. Attribute p i
 pointer =
     Internal.Class Flag.cursor (classes.cursorPointer)
 
 {-| -}
-scrollbars :: forall r p i. Attribute r p i
+scrollbars :: forall p i. Attribute p i
 scrollbars =
     Internal.Class Flag.overflow (classes.scrollbars)
 
 
 {-| -}
-scrollbarY :: forall r p i. Attribute r p i
+scrollbarY :: forall p i. Attribute p i
 scrollbarY =
     Internal.Class Flag.overflow (classes.scrollbarsY)
 
 
 {-| -}
-scrollbarX :: forall r p i. Attribute r p i
+scrollbarX :: forall p i. Attribute p i
 scrollbarX =
     Internal.Class Flag.overflow (classes.scrollbarsX)
 
 {-| -}
-padding :: forall r p i. Int -> Attribute r p i
+padding :: forall p i. Int -> Attribute p i
 padding x =
     let
         f =
@@ -357,7 +358,7 @@ padding x =
 
 {-| Set horizontal and vertical padding.
 -}
-paddingXY :: forall r p i. Int -> Int -> Attribute r p i
+paddingXY :: forall p i. Int -> Int -> Attribute p i
 paddingXY x y =
     if x == y then
         let
@@ -398,7 +399,7 @@ And then just do
     paddingEach { edges | right = 5 }
 
 -}
-paddingEach :: forall r p i. { top :: Int, right :: Int, bottom :: Int, left :: Int } -> Attribute r p i
+paddingEach :: forall p i. { top :: Int, right :: Int, bottom :: Int, left :: Int } -> Attribute p i
 paddingEach { top, right, bottom, left } =
     if top == right && top == bottom && top == left then
         let
@@ -424,48 +425,48 @@ paddingEach { top, right, bottom, left } =
             )
 
 {-| -}
-centerX :: forall r p i. Attribute r p i
+centerX :: forall p i. Attribute p i
 centerX =
     Internal.AlignX Internal.CenterX
 
 
 {-| -}
-centerY :: forall r p i. Attribute r p i
+centerY :: forall p i. Attribute p i
 centerY =
     Internal.AlignY Internal.CenterY
 
 
 {-| -}
-alignTop :: forall r p i. Attribute r p i
+alignTop :: forall p i. Attribute p i
 alignTop =
     Internal.AlignY Internal.Top
 
 
 {-| -}
-alignBottom :: forall r p i. Attribute r p i
+alignBottom :: forall p i. Attribute p i
 alignBottom =
     Internal.AlignY Internal.Bottom
 
 
 {-| -}
-alignLeft :: forall r p i. Attribute r p i
+alignLeft :: forall p i. Attribute p i
 alignLeft =
     Internal.AlignX Internal.Left
 
 
 {-| -}
-alignRight :: forall r p i. Attribute r p i
+alignRight :: forall p i. Attribute p i
 alignRight =
     Internal.AlignX Internal.Right
 
 {-| -}
-spaceEvenly :: forall r p i. Attribute r p i
+spaceEvenly :: forall p i. Attribute p i
 spaceEvenly =
     Internal.Class Flag.spacing (Style.classes.spaceEvenly)
 
 
 {-| -}
-spacing :: forall r p i. Int -> Attribute r p i
+spacing :: forall p i. Int -> Attribute p i
 spacing x =
     Internal.StyleClass Flag.spacing (Internal.SpacingStyle (Internal.spacingName x x) x x)
 
@@ -475,7 +476,7 @@ spacing x =
 However for some layouts, like `textColumn`, you may want to set a different spacing for the x axis compared to the y axis.
 
 -}
-spacingXY :: forall r p i. Int -> Int -> Attribute r p i
+spacingXY :: forall p i. Int -> Int -> Attribute p i
 spacingXY x y =
     Internal.StyleClass Flag.spacing (Internal.SpacingStyle (Internal.spacingName x y) x y)
 
@@ -517,7 +518,7 @@ Which will look something like
 **Note** `spacing` on a paragraph will set the pixel spacing between lines.
 
 -}
-paragraph :: forall r p i. Array (Attribute r p i) -> Array (Element p i) -> Element p i
+paragraph :: forall p i. Array (Attribute p i) -> Array (Element p i) -> Element p i
 paragraph attrs children =
     Internal.element
         Internal.asParagraph
@@ -530,7 +531,7 @@ paragraph attrs children =
         (Internal.Unkeyed children)
 
 {-| -}
-mouseOver :: forall r p i. Array (Decoration r) -> Attribute r p i
+mouseOver :: forall p i. Array Decoration -> Attribute p i
 mouseOver decs =
     Internal.StyleClass Flag.hover $
         Internal.PseudoSelector Internal.Hover
@@ -538,7 +539,7 @@ mouseOver decs =
 
 
 {-| -}
-mouseDown :: forall r p i. Array (Decoration r) -> Attribute r p i
+mouseDown :: forall p i. Array Decoration -> Attribute p i
 mouseDown decs =
     Internal.StyleClass Flag.active $
         Internal.PseudoSelector Internal.Active
@@ -546,8 +547,89 @@ mouseDown decs =
 
 
 {-| -}
-focused :: forall r p i. Array (Decoration r) -> Attribute r p i
+focused :: forall p i. Array Decoration -> Attribute p i
 focused decs =
     Internal.StyleClass Flag.focus $
         Internal.PseudoSelector Internal.Focus
             (Internal.unwrapDecorations decs)
+
+{-|
+
+    link []
+        { url = "http://fruits.com"
+        , label = text "A link to my favorite fruit provider."
+        }
+
+-}
+link :: forall p i.
+    Array (Attribute p i)
+    ->
+        { url :: String
+        , label :: Element p i
+        }
+    -> Element p i
+link attrs { url, label } =
+    Internal.element
+        Internal.asEl
+        (Internal.NodeName "a")
+        (Internal.iprop' (HP.href url)
+            : Internal.iprop' (HP.rel "noopener noreferrer")
+            : width shrink
+            : height shrink
+            : Internal.htmlClasses [classes.contentCenterX, classes.contentCenterY, classes.link]
+            : attrs
+        )
+        (Internal.Unkeyed [ label ])
+
+{- NEARBYS -}
+
+
+createNearby :: forall p i. Internal.Location -> Element p i -> Attribute p i
+createNearby loc element =
+    case element of
+        Internal.Empty ->
+            Internal.NoAttribute
+
+        _ ->
+            Internal.Nearby loc element
+
+
+{-| -}
+below :: forall p i. Element p i -> Attribute p i
+below element =
+    createNearby Internal.Below element
+
+
+{-| -}
+above :: forall p i. Element p i -> Attribute p i
+above element =
+    createNearby Internal.Above element
+
+
+{-| -}
+onRight :: forall p i. Element p i -> Attribute p i
+onRight element =
+    createNearby Internal.OnRight element
+
+
+{-| -}
+onLeft :: forall p i. Element p i -> Attribute p i
+onLeft element =
+    createNearby Internal.OnLeft element
+
+
+{-| This will place an element in front of another.
+
+**Note:** If you use this on a `layout` element, it will place the element as fixed to the viewport which can be useful for modals and overlays.
+
+-}
+inFront :: forall p i. Element p i -> Attribute p i
+inFront element =
+    createNearby Internal.InFront element
+
+
+{-| This will place an element between the background and the content of an element.
+-}
+behindContent :: forall p i. Element p i -> Attribute p i
+behindContent element =
+    createNearby Internal.Behind element

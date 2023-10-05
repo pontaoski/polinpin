@@ -6,8 +6,10 @@ import Data.Maybe (Maybe(..))
 import Data.List (List(..), (:))
 import Halogen.HTML.Core (HTML)
 import Halogen.HTML as HH
-import Halogen.HTML (IProp, ElemName(..), PropName(..), ClassName(..), AttrName(..))
+import Halogen.HTML (ElemName(..), PropName(..), ClassName(..), AttrName(..))
 import Halogen.HTML.Properties as HP
+import Halogen.VDom.DOM.Prop as VDomProp
+import Halogen.Query.Input (Input)
 import Data.Tuple (Tuple(..))
 import Data.Array as Array
 import Data.Int as Int
@@ -221,9 +223,11 @@ data Description
     | Button
     | Paragraph
 
-data Attribute aligned (r :: Row Type) p i
+type VDomProp' i = VDomProp.Prop (Input i)
+
+data Attribute aligned p i
     = NoAttribute
-    | Attr (HH.IProp r i)
+    | Attr (VDomProp' i)
     | Describe Description
       -- invalidation key and literal class
     | Class Flag ClassName
@@ -236,7 +240,7 @@ data Attribute aligned (r :: Row Type) p i
     | Nearby Location (Element p i)
     | TransformComponent Flag TransformComponent
 
-instance bifunctorAttribute :: Bifunctor (Attribute aligned r) where
+instance bifunctorAttribute :: Bifunctor (Attribute aligned) where
     bimap fnf fng attr =
         case attr of
             NoAttribute ->
@@ -267,12 +271,12 @@ instance bifunctorAttribute :: Bifunctor (Attribute aligned r) where
                 Nearby location (bimap fnf fng elem)
 
             Attr htmlAttr ->
-                Attr (map fng htmlAttr)
+                Attr (map (map fng) htmlAttr)
 
             TransformComponent fl trans ->
                 TransformComponent fl trans
 
-instance functorAttribute :: Functor (Attribute aligned r p) where
+instance functorAttribute :: Functor (Attribute aligned p) where
     map = rmap
 
 data Location
@@ -332,7 +336,7 @@ formatColorClass (Rgba red green blue alpha) =
         <> "-"
         <> floatClass alpha
 
-rootStyle :: forall aligned r p i. Array (Attribute aligned r p i)
+rootStyle :: forall aligned p i. Array (Attribute aligned p i)
 rootStyle =
     let
         families =
@@ -567,7 +571,7 @@ optionsToRecord options =
     # andFinally
 
 {-| -}
-renderRoot :: forall aligned r p i . Array Option -> Array (Attribute aligned r p i) -> Element p i -> HTML p i
+renderRoot :: forall aligned p i . Array Option -> Array (Attribute aligned p i) -> Element p i -> HTML p i
 renderRoot optionArray attributes child =
     let
         options =
@@ -618,13 +622,16 @@ gridClass = [classes.any, classes.grid]
 paragraphClass = [classes.any, classes.paragraph]
 pageClass = [classes.any, classes.page]
 
-htmlClass :: forall aligned r p i. ClassName -> Attribute aligned r p i
-htmlClass cls =
-    Attr (HP.class_ cls # unwrap # wrap)
+iprop' :: forall aligned r p i. HP.IProp r i -> Attribute aligned p i
+iprop' x = Attr (unwrap x)
 
-htmlClasses :: forall aligned r p i. Array ClassName -> Attribute aligned r p i
+htmlClass :: forall aligned p i. ClassName -> Attribute aligned p i
+htmlClass cls =
+    Attr (unwrap (HP.class_ cls))
+
+htmlClasses :: forall aligned p i. Array ClassName -> Attribute aligned p i
 htmlClasses cls =
-    Attr (HP.classes cls # unwrap # wrap)
+    Attr (unwrap (HP.classes cls))
 
 contextClasses context =
     case context of
@@ -646,7 +653,7 @@ contextClasses context =
         AsTextColumn ->
             pageClass
 
-element :: forall aligned r p i . LayoutContext -> NodeName -> Array (Attribute aligned r p i) -> Children (Element p i) -> Element p i
+element :: forall aligned p i . LayoutContext -> NodeName -> Array (Attribute aligned p i) -> Children (Element p i) -> Element p i
 element context node attributes children =
     attributes
         # List.fromFoldable
@@ -669,7 +676,7 @@ addChildren existing nearbyChildren =
         ChildrenBehindAndInFront behind inFront ->
             behind <> existing <> inFront
 
-createElement :: forall r p i . LayoutContext -> Children (Element p i) -> Gathered r p i -> Element p i
+createElement :: forall p i . LayoutContext -> Children (Element p i) -> Gathered p i -> Element p i
 createElement context children rendered =
     let
         gather child (Tuple htmls existingStyles) =
@@ -1953,16 +1960,16 @@ renderFocusStyle focus =
         )
     ]
 
-finalizeNode :: forall r p i . Flag.Field -> NodeName -> Array (IProp r i) -> Children (HTML p i) -> EmbedStyle -> LayoutContext -> HTML p i
+finalizeNode :: forall p i . Flag.Field -> NodeName -> Array (VDomProp' i) -> Children (HTML p i) -> EmbedStyle -> LayoutContext -> HTML p i
 finalizeNode has node attributes children embedMode parentContext =
     let
-        createNode :: ElemName -> Array (IProp r i) -> HTML p i
+        createNode :: ElemName -> Array (VDomProp' i) -> HTML p i
         createNode nodeName attrs =
             case children of
                 Keyed keyed ->
                     HH.keyed
                         nodeName
-                        (preProcess attrs)
+                        (map wrap (preProcess attrs))
                         (case embedMode of
                             NoStyleSheet ->
                                 keyed
@@ -1985,7 +1992,7 @@ finalizeNode has node attributes children embedMode parentContext =
                         _ ->
                             HH.element nodeName
                     )
-                        (preProcess (map (\x -> x # unwrap # wrap) attrs))
+                        (map wrap (preProcess attrs))
                         (case embedMode of
                             NoStyleSheet ->
                                 unkeyed
@@ -2007,9 +2014,9 @@ finalizeNode has node attributes children embedMode parentContext =
 
                 Embedded nodeName internal ->
                     HH.element (ElemName nodeName)
-                        (preProcess attributes)
+                        (map wrap (preProcess attributes))
                         [ createNode (ElemName internal)
-                            [ wrap (unwrap (HP.classes [classes.any, classes.single]))
+                            [ unwrap (HP.classes [classes.any, classes.single])
                             ]
                         ]
     in
@@ -2248,9 +2255,9 @@ data NearbyChildren p i
     | ChildrenInFront (Array (HH.HTML p i))
     | ChildrenBehindAndInFront (Array (HH.HTML p i)) (Array (HH.HTML p i))
 
-type Gathered (r :: Row Type) p i =
+type Gathered p i =
     { node :: NodeName
-    , attributes :: Array (IProp r i)
+    , attributes :: Array (VDomProp' i)
     , styles :: Array Style
     , children :: NearbyChildren p i
     , has :: Flag.Field
@@ -2635,34 +2642,22 @@ alignYName align =
         CenterY ->
             [classes.alignedVertically, classes.alignCenterY]
 
-fongle :: forall r i . ClassName -> IProp r i
-fongle className =
-    wrap (unwrap (HP.class_ className))
-
-foo :: forall r i . ClassName -> List (IProp (class :: String | r) i) -> List (IProp (class :: String | r) i)
-foo className attrs =
-    (HP.class_ className) : attrs
-
-genericise :: forall r1 r2 i . IProp r1 i -> IProp r2 i
-genericise iprop =
-    wrap (unwrap iprop)
-
-gatherAttrRecursive :: forall aligned r p i .
+gatherAttrRecursive :: forall aligned p i .
     Array ClassName
     -> NodeName
     -> Flag.Field
     -> Transformation
     -> Array Style
-    -> List (IProp r i)
+    -> List (VDomProp' i)
     -> NearbyChildren p i
-    -> List (Attribute aligned r p i)
-    -> Gathered r p i
+    -> List (Attribute aligned p i)
+    -> Gathered p i
 gatherAttrRecursive classes node has transform styles attrs children elementAttrs =
     case elementAttrs of
         Nil ->
             case transformClass transform of
                 Nothing ->
-                    { attributes: Array.fromFoldable $ (genericise (HP.classes classes # unwrap # wrap)) : attrs
+                    { attributes: Array.fromFoldable $ (unwrap (HP.classes classes)) : attrs
                     , styles: styles
                     , node: node
                     , children: children
@@ -2670,7 +2665,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                     }
 
                 Just klass ->
-                    { attributes: Array.fromFoldable $ (genericise (HP.classes $ klass `Array.cons` classes)) : attrs
+                    { attributes: Array.fromFoldable $ (unwrap (HP.classes $ klass `Array.cons` classes)) : attrs
                     , styles: Transform transform `Array.cons` styles
                     , node: node
                     , children: children
@@ -2927,16 +2922,16 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                                 remaining
 
                         Button ->
-                            gatherAttrRecursive classes node has transform styles (HP.attr (AttrName "role") "button" : attrs) children remaining
+                            gatherAttrRecursive classes node has transform styles (unwrap (HP.attr (AttrName "role") "button") : attrs) children remaining
 
                         Label label ->
-                            gatherAttrRecursive classes node has transform styles (HP.attr (AttrName "aria-label") label : attrs) children remaining
+                            gatherAttrRecursive classes node has transform styles (unwrap (HP.attr (AttrName "aria-label") label) : attrs) children remaining
 
                         LivePolite ->
-                            gatherAttrRecursive classes node has transform styles (HP.attr (AttrName "aria-live") "polite" : attrs) children remaining
+                            gatherAttrRecursive classes node has transform styles (unwrap (HP.attr (AttrName "aria-live") "polite") : attrs) children remaining
 
                         LiveAssertive ->
-                            gatherAttrRecursive classes node has transform styles (HP.attr (AttrName "aria-live") "assertive" : attrs) children remaining
+                            gatherAttrRecursive classes node has transform styles (unwrap (HP.attr (AttrName "aria-live") "assertive") : attrs) children remaining
 
                 Nearby location elem ->
                     let
@@ -3017,7 +3012,7 @@ gatherAttrRecursive classes node has transform styles attrs children elementAttr
                             children
                             remaining
 
-unwrapDecorations :: forall r. Array (Attribute Void r Void Void) -> Array Style
+unwrapDecorations :: Array (Attribute Void Void Void) -> Array Style
 unwrapDecorations attrs =
     case elmFoldlArray unwrapDecsHelper (Tuple [] Untransformed) attrs of
         (Tuple styles transform) ->
@@ -3035,11 +3030,11 @@ unwrapDecsHelper attr (Tuple styles trans) =
         _ ->
             (Tuple styles trans)
 
-removeNever :: forall r p i. Attribute Void r p Void -> Attribute Unit r p i
+removeNever :: forall p i. Attribute Void p Void -> Attribute Unit p i
 removeNever style =
     mapAttrFromStyle absurd style
 
-mapAttrFromStyle :: forall r p i1 i2. (i1 -> i2) -> Attribute Void r p i1 -> Attribute Unit r p i2
+mapAttrFromStyle :: forall p i1 i2. (i1 -> i2) -> Attribute Void p i1 -> Attribute Unit p i2
 mapAttrFromStyle fn attr =
     case attr of
         NoAttribute ->
@@ -3071,7 +3066,7 @@ mapAttrFromStyle fn attr =
             Nearby location (map fn elem)
 
         Attr htmlAttr ->
-            Attr (map fn htmlAttr)
+            Attr (map (map fn) htmlAttr)
 
         TransformComponent fl trans ->
             TransformComponent fl trans

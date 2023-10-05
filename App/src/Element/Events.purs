@@ -40,59 +40,59 @@ import Data.Newtype (wrap, unwrap)
 
 
 {-| -}
-onMouseDown :: forall r p i. (MouseEvent -> i) -> Attribute r p i
+onMouseDown :: forall p i. (MouseEvent -> i) -> Attribute p i
 onMouseDown =
-    Internal.Attr <<< wrap <<< unwrap <<< Events.onMouseDown
+    Internal.iprop' <<< Events.onMouseDown
 
 
 {-| -}
-onMouseUp :: forall r p i. (MouseEvent -> i) -> Attribute r p i
+onMouseUp :: forall p i. (MouseEvent -> i) -> Attribute p i
 onMouseUp =
-    Internal.Attr <<< wrap <<< unwrap <<< Events.onMouseUp
+    Internal.iprop' <<< Events.onMouseUp
 
 
 {-| -}
-onClick :: forall r p i. (MouseEvent -> i) -> Attribute r p i
+onClick :: forall p i. (MouseEvent -> i) -> Attribute p i
 onClick =
-    Internal.Attr <<< wrap <<< unwrap <<< Events.onClick
+    Internal.iprop' <<< Events.onClick
 
 
 {-| -}
-onDoubleClick :: forall r p i. (MouseEvent -> i) -> Attribute r p i
+onDoubleClick :: forall p i. (MouseEvent -> i) -> Attribute p i
 onDoubleClick =
-    Internal.Attr <<< wrap <<< unwrap <<< Events.onDoubleClick
+    Internal.iprop' <<< Events.onDoubleClick
 
 
 {-| -}
-onMouseEnter :: forall r p i. (MouseEvent -> i) -> Attribute r p i
+onMouseEnter :: forall p i. (MouseEvent -> i) -> Attribute p i
 onMouseEnter =
-    Internal.Attr <<< wrap <<< unwrap <<< Events.onMouseEnter
+    Internal.iprop' <<< Events.onMouseEnter
 
 
 {-| -}
-onMouseLeave :: forall r p i. (MouseEvent -> i) -> Attribute r p i
+onMouseLeave :: forall p i. (MouseEvent -> i) -> Attribute p i
 onMouseLeave =
-    Internal.Attr <<< wrap <<< unwrap <<< Events.onMouseLeave
+    Internal.iprop' <<< Events.onMouseLeave
 
 
 {-| -}
-onMouseMove :: forall r p i. (MouseEvent -> i) -> Attribute r p i
+onMouseMove :: forall p i. (MouseEvent -> i) -> Attribute p i
 onMouseMove =
-    Internal.Attr <<< wrap <<< unwrap <<< Events.onMouseMove
+    Internal.iprop' <<< Events.onMouseMove
 
 -- FOCUS EVENTS
 
 
 {-| -}
-onLoseFocus ::forall r p i. (FocusEvent -> i) -> Attribute r p i
+onLoseFocus ::forall p i. (FocusEvent -> i) -> Attribute p i
 onLoseFocus =
-    Internal.Attr <<< wrap <<< unwrap <<< Events.onBlur
+    Internal.iprop' <<< Events.onBlur
 
 
 {-| -}
-onFocus :: forall r p i. (FocusEvent -> i) -> Attribute r p i
+onFocus :: forall p i. (FocusEvent -> i) -> Attribute p i
 onFocus =
-    Internal.Attr <<< wrap <<< unwrap <<< Events.onFocus
+    Internal.iprop' <<< Events.onFocus
 
 
 
@@ -121,6 +121,6 @@ It really does help!
 [tutorial]: <https://github.com/evancz/elm-architecture-tutorial/>
 
 -}
-on :: forall r p i. EventType -> (Event -> i) -> Attribute r p i
+on :: forall p i. EventType -> (Event -> i) -> Attribute p i
 on event =
-    Internal.Attr <<< wrap <<< unwrap <<< Events.handler event
+    Internal.iprop' <<< Events.handler event

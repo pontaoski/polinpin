@@ -1,18 +1,15 @@
 module Element.Internal.Merginator where
 
 import Prelude
-import Halogen.HTML (IProp)
 import Halogen.VDom.DOM.Prop (Prop(..), PropValue, propFromString)
-import Debug as Debug
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
-import Data.Newtype (wrap, unwrap)
 import Halogen.Query.Input (Input)
 import Unsafe.Coerce (unsafeCoerce)
 import Data.String as String
 import Data.String (Pattern(..))
 
-preProcess :: forall r i. Array (IProp r i) -> Array (IProp r i)
+preProcess :: forall i. Array (Prop (Input i)) -> Array (Prop (Input i))
 preProcess props =
     let
         withClasses :: Array PropValue
@@ -22,7 +19,7 @@ preProcess props =
                     (Property "className" uwu) ->
                         Just uwu
                     _ ->
-                        Nothing) (map unwrap props)
+                        Nothing) props
 
         classesAsStrings :: Array String
         classesAsStrings =
@@ -44,7 +41,7 @@ preProcess props =
                     (Property "className" _) ->
                         Nothing
                     _ ->
-                        Just item) (map unwrap props)
+                        Just item) props
 
         allTogetherNow :: Array (Prop (Input i))
         allTogetherNow =
@@ -52,9 +49,5 @@ preProcess props =
                 withoutClasses
             else
                 (Property "className" (propFromString classesRejoined)) `Array.cons` withoutClasses
-
-        backToHalogen :: Array (IProp r i)
-        backToHalogen =
-            map wrap allTogetherNow
     in
-    backToHalogen -- Debug.trace backToHalogen \_ -> backToHalogen
+    allTogetherNow

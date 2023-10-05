@@ -86,7 +86,7 @@ type Font =
 
 
 {-| -}
-color :: forall decorative r p i. Color -> Attr decorative r p i
+color :: forall decorative p i. Color -> Attr decorative p i
 color fontColor =
     Internal.StyleClass
         Flag.fontColor
@@ -112,7 +112,7 @@ color fontColor =
             (text "")
 
 -}
-family :: forall r p i. Array Font -> Attribute r p i
+family :: forall p i. Array Font -> Attribute p i
 family families =
     Internal.StyleClass
         Flag.fontFamily
@@ -167,13 +167,13 @@ with =
 
 
 {-| -}
-sizeByCapital :: forall r p i. Attribute r p i
+sizeByCapital :: forall p i. Attribute p i
 sizeByCapital =
     Internal.htmlClass classes.sizeByCapital
 
 
 {-| -}
-full :: forall r p i. Attribute r p i
+full :: forall p i. Attribute p i
 full =
     Internal.htmlClass classes.fullSize
 
@@ -209,14 +209,14 @@ external { url, name } =
 
 {-| Font sizes are always given as `px`.
 -}
-size :: forall decorative r p i. Int -> Attr decorative r p i
+size :: forall decorative p i. Int -> Attr decorative p i
 size i =
     Internal.StyleClass Flag.fontSize (Internal.FontSize i)
 
 
 {-| In `px`.
 -}
-letterSpacing :: forall r p i. Number -> Attribute r p i
+letterSpacing :: forall p i. Number -> Attribute p i
 letterSpacing offset =
     Internal.StyleClass Flag.letterSpacing $
         Internal.Single
@@ -227,7 +227,7 @@ letterSpacing offset =
 
 {-| In `px`.
 -}
-wordSpacing :: forall r p i. Number -> Attribute r p i
+wordSpacing :: forall p i. Number -> Attribute p i
 wordSpacing offset =
     Internal.StyleClass Flag.wordSpacing $
         Internal.Single (Selector $ "ws-" <> Internal.floatClass offset) "word-spacing" (NumberFormat.toString offset <> "px")
@@ -235,27 +235,27 @@ wordSpacing offset =
 
 {-| Align the font to the left.
 -}
-alignLeft :: forall r p i. Attribute r p i
+alignLeft :: forall p i. Attribute p i
 alignLeft =
     Internal.Class Flag.fontAlignment classes.textLeft
 
 
 {-| Align the font to the right.
 -}
-alignRight :: forall r p i. Attribute r p i
+alignRight :: forall p i. Attribute p i
 alignRight =
     Internal.Class Flag.fontAlignment classes.textRight
 
 
 {-| Center align the font.
 -}
-center :: forall r p i. Attribute r p i
+center :: forall p i. Attribute p i
 center =
     Internal.Class Flag.fontAlignment classes.textCenter
 
 
 {-| -}
-justify :: forall r p i. Attribute r p i
+justify :: forall p i. Attribute p i
 justify =
     Internal.Class Flag.fontAlignment classes.textJustify
 
@@ -268,92 +268,92 @@ justify =
 
 
 {-| -}
-underline :: forall r p i. Attribute r p i
+underline :: forall p i. Attribute p i
 underline =
     Internal.htmlClass classes.underline
 
 
 {-| -}
-strike :: forall r p i. Attribute r p i
+strike :: forall p i. Attribute p i
 strike =
     Internal.htmlClass classes.strike
 
 
 {-| -}
-italic :: forall r p i. Attribute r p i
+italic :: forall p i. Attribute p i
 italic =
     Internal.htmlClass classes.italic
 
 
 {-| -}
-bold :: forall r p i. Attribute r p i
+bold :: forall p i. Attribute p i
 bold =
     Internal.Class Flag.fontWeight classes.bold
 
 
 {-| -}
-light :: forall r p i. Attribute r p i
+light :: forall p i. Attribute p i
 light =
     Internal.Class Flag.fontWeight classes.textLight
 
 
 {-| -}
-hairline :: forall r p i. Attribute r p i
+hairline :: forall p i. Attribute p i
 hairline =
     Internal.Class Flag.fontWeight classes.textThin
 
 
 {-| -}
-extraLight :: forall r p i. Attribute r p i
+extraLight :: forall p i. Attribute p i
 extraLight =
     Internal.Class Flag.fontWeight classes.textExtraLight
 
 
 {-| -}
-regular :: forall r p i. Attribute r p i
+regular :: forall p i. Attribute p i
 regular =
     Internal.Class Flag.fontWeight classes.textNormalWeight
 
 
 {-| -}
-semiBold :: forall r p i. Attribute r p i
+semiBold :: forall p i. Attribute p i
 semiBold =
     Internal.Class Flag.fontWeight classes.textSemiBold
 
 
 {-| -}
-medium :: forall r p i. Attribute r p i
+medium :: forall p i. Attribute p i
 medium =
     Internal.Class Flag.fontWeight classes.textMedium
 
 
 {-| -}
-extraBold :: forall r p i. Attribute r p i
+extraBold :: forall p i. Attribute p i
 extraBold =
     Internal.Class Flag.fontWeight classes.textExtraBold
 
 
 {-| -}
-heavy :: forall r p i. Attribute r p i
+heavy :: forall p i. Attribute p i
 heavy =
     Internal.Class Flag.fontWeight classes.textHeavy
 
 
 {-| This will reset bold and italic.
 -}
-unitalicized :: forall r p i. Attribute r p i
+unitalicized :: forall p i. Attribute p i
 unitalicized =
     Internal.htmlClass classes.textUnitalicized
 
 
 {-| -}
 shadow ::
-    forall decorative r p i.
+    forall decorative p i.
     { offset :: (Tuple Number Number)
     , blur :: Number
     , color :: Color
     }
-    -> Attr decorative r p i
+    -> Attr decorative p i
 shadow shade =
     Internal.StyleClass Flag.txtShadows $
         Internal.Single (Selector (Internal.textShadowClass shade)) "text-shadow" (Internal.formatTextShadow shade)
@@ -361,7 +361,7 @@ shadow shade =
 
 {-| A glow is just a simplified shadow.
 -}
-glow :: forall decorative r p i. Color -> Number -> Attr decorative r p i
+glow :: forall decorative p i. Color -> Number -> Attr decorative p i
 glow clr i =
     let
         shade =
@@ -393,7 +393,7 @@ type Variant =
 **Note** These will **not** stack. If you want multiple variants, you should use `Font.variantList`.
 
 -}
-variant :: forall r p i. Variant -> Attribute r p i
+variant :: forall p i. Variant -> Attribute p i
 variant var =
     case var of
         Internal.VariantActive name ->
@@ -419,7 +419,7 @@ isSmallCaps x =
 
 
 {-| -}
-variantList :: forall r p i. Array Variant -> Attribute r p i
+variantList :: forall r p i. Array Variant -> Attribute p i
 variantList vars =
     let
         features =

@@ -15,16 +15,20 @@ import Polinpin.Interfaces (Route(..), navigate, routeCodec, class Navigation)
 import Halogen.HTML as HH
 import Element
 import Polinpin.DemoPage as DemoPage
+import Polinpin.SharedUI as SharedUI
+import Halogen.Store.Connect (Connected, connect)
+import Halogen.Store.Select (selectAll)
 
 data Query a
     = Navigate Route a
 
 data Action
     = Initialize
-    | Receive Unit
+    | Receive (Connected Store.Store Unit)
 
 type State =
     { route :: Maybe Route
+    , store :: Store.Store
     }
 
 type ChildSlots :: forall k. Row k
@@ -39,13 +43,14 @@ component
     => MonadStore Store.Action Store.Store m
     => H.Component Query Unit Void m
 component =
-    H.mkComponent
-        { initialState: \_ -> { route: Nothing }
+    connect selectAll $ H.mkComponent
+        { initialState: \{ context } -> { route: Nothing, store: context }
         , render
         , eval: H.mkEval $ H.defaultEval
             { handleQuery = handleQuery
             , handleAction = handleAction
             , initialize = Just Initialize
+            , receive = Just <<< Receive
             }
         }
     where
@@ -55,8 +60,8 @@ component =
         Initialize -> do
             initialRoute <- hush <<< (RD.parse routeCodec) <$> liftEffect getHash
             navigate $ fromMaybe Home initialRoute
-        Receive _ ->
-            pure unit
+        Receive { context } ->
+            H.modify_ _ { store = context }
 
     handleQuery :: forall a. Query a -> H.HalogenM State Action ChildSlots Void m (Maybe a)
     handleQuery = case _ of
@@ -67,8 +72,22 @@ component =
             pure (Just a)
 
     render :: State -> H.ComponentHTML Action ChildSlots m
-    render { route: _route } =
-        DemoPage.main
+    render { store, route } =
+        case route of
+            Just Home ->
+                SharedUI.toHTML $
+                    SharedUI.sharedFrame store
+                        { body: (text "owo")
+                        , over: Nothing
+                        , title: "Homepage"
+                        }
+            Just _ ->
+                layout [] (text "not implemented")
+            Nothing ->
+                layout [] (text "not found")
+        
+
+        -- DemoPage.main
         -- layoutWith { options: [] } [] $
         --     row [] [text "test", text "test", column [] [text "column", text "column"]]
         -- HH.div_ [ HH.text "Oh no! That page wasn't found." ]
