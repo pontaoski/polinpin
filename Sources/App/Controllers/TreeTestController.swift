@@ -8,11 +8,170 @@ func clean(string: String) -> String {
      }
 }
 
+struct UserError: DebuggableError, AbortError {
+    enum Value {
+        case notFound(who: String)
+    }
+    let value: Value
+    var source: ErrorSource?
+    var identifier: String {
+        switch self.value {
+        case .notFound:
+            return "userNotFound"
+        }
+    }
+    var reason: String {
+        switch self.value {
+        case .notFound(let who):
+            return "User \(who) was not found"
+        }
+    }
+    var status: HTTPResponseStatus {
+        switch self.value {
+        case .notFound:
+            return .notFound
+        }
+    }
+    init(
+        _ value: Value,
+        file: String = #file,
+        function: String = #function,
+        line: UInt = #line,
+        column: UInt = #column
+    ) {
+        self.value = value
+        self.source = .init(
+            file: file,
+            function: function,
+            line: line,
+            column: column
+        )
+    }
+}
+
+struct StudyError: DebuggableError, AbortError {
+    enum Value {
+        case notFound(user: UUID, slug: String)
+        case notPublished(user: UUID, slug: String)
+        case invalidPassword(user: UUID, slug: String)
+        case noPermissionToEdit(user: UUID, slug: String)
+    }
+    let value: Value
+    var source: ErrorSource?
+    var identifier: String {
+        switch self.value {
+        case .notFound:
+            return "studyNotFound"
+        case .notPublished:
+            return "studyNotPublished"
+        case .invalidPassword:
+            return "studyInvalidPassword"
+        case .noPermissionToEdit:
+            return "studyNoPermissionToEdit"
+        }
+    }
+    var reason: String {
+        switch self.value {
+        case .notFound(let user, let slug):
+            return "Study \(user)/\(slug) was not found"
+        case .notPublished(let user, let slug):
+            return "Study \(user)/\(slug) was not published"
+        case .invalidPassword(let user, let slug):
+            return "Invalid password for study \(user)/\(slug)"
+        case .noPermissionToEdit(let user, let slug):
+            return "No permission to edit study \(user)/\(slug)"
+        }
+    }
+    var status: HTTPResponseStatus {
+        switch self.value {
+        case .notFound:
+            return .notFound
+        case .notPublished:
+            return .forbidden
+        case .invalidPassword:
+            return .unauthorized
+        case .noPermissionToEdit:
+            return .forbidden
+        }
+    }
+    init(
+        _ value: Value,
+        file: String = #file,
+        function: String = #function,
+        line: UInt = #line,
+        column: UInt = #column
+    ) {
+        self.value = value
+        self.source = .init(
+            file: file,
+            function: function,
+            line: line,
+            column: column
+        )
+    }
+}
+
+struct TreeTestError: DebuggableError, AbortError {
+    enum Value {
+        case taskAnswerMissingInTree(task: String, answer: String)
+        case invalidCountOfTasksInSubmission
+        case outOfOrderTasksInSubmission
+        case submissionAnswerMissingInTree
+    }
+    let value: Value
+    var source: ErrorSource?
+    var identifier: String {
+        switch self.value {
+        case .taskAnswerMissingInTree:
+            return "treeTestTaskAnswerMissingInTree"
+        case .invalidCountOfTasksInSubmission:
+            return "treeTestInvalidCountOfTasksInSubmission"
+        case .outOfOrderTasksInSubmission:
+            return "treeTestOutOfOrderTasksInSubmission"
+        case .submissionAnswerMissingInTree:
+            return "treeTestSubmissionAnswerMissingInTree"
+        }
+    }
+    var reason: String {
+        switch self.value {
+        case .taskAnswerMissingInTree(let task, let answer):
+            return "The answer \(answer) for task \(task) is missing in the tree"
+        case .invalidCountOfTasksInSubmission:
+            return "The submission has an invalid number of completed tasks"
+        case .outOfOrderTasksInSubmission:
+            return "The submission tasks are out of order"
+        case .submissionAnswerMissingInTree:
+            return "The submission tasks has answers that are not in the tree"
+        }
+    }
+    var status: HTTPResponseStatus {
+        switch self.value {
+        case .taskAnswerMissingInTree, .invalidCountOfTasksInSubmission, .outOfOrderTasksInSubmission, .submissionAnswerMissingInTree:
+            return .badRequest
+        }
+    }
+    init(
+        _ value: Value,
+        file: String = #file,
+        function: String = #function,
+        line: UInt = #line,
+        column: UInt = #column
+    ) {
+        self.value = value
+        self.source = .init(
+            file: file,
+            function: function,
+            line: line,
+            column: column
+        )
+    }
+}
+
 fileprivate extension Request {
     func getStudy() async throws -> Study {
         let user = self.parameters.get("user")!
         guard let user = try await User.query(on: self.db).filter(\.$username == user).first() else {
-            throw Abort(.notFound)
+            throw UserError(.notFound(who: user))
         }
         let uid = user.id!
         let slug = self.parameters.get("slug")!
@@ -23,7 +182,7 @@ fileprivate extension Request {
             .with(\.$user)
             .with(\.$treeTestStudy)
             .first() else {
-                throw Abort(.notFound)
+                throw StudyError(.notFound(user: uid, slug: slug))
             }
 
         return study
@@ -56,10 +215,10 @@ final class TreeTestController: RouteCollection {
 
         if user?.id != study.user.id {
             guard study.published else {
-                throw Abort(.forbidden)
+                throw StudyError(.notPublished(user: study.user.id!, slug: study.slug))
             }
             guard study.password == req.headers["StudyPassword"][safe: 0] else {
-                throw Abort(.unauthorized)
+                throw StudyError(.invalidPassword(user: study.user.id!, slug: study.slug))
             }
         }
 
@@ -79,12 +238,12 @@ final class TreeTestController: RouteCollection {
         let request = try req.content.decode(UpdateRequest.self)
         let study = try await req.getStudy()
         guard user.id == study.user.id else {
-            throw Abort(.forbidden)
+            throw StudyError(.noPermissionToEdit(user: study.user.id!, slug: study.slug))
         }
 
         for task in request.tasks {
             guard request.tree.contains(id: task.answer) else {
-                throw Abort(.badRequest)
+                throw TreeTestError(.taskAnswerMissingInTree(task: task.id, answer: task.answer))
             }
         }
 
@@ -102,7 +261,7 @@ final class TreeTestController: RouteCollection {
         let user: User = try req.auth.require()
         let study = try await req.getStudy()
         guard user.id == study.user.id else {
-            throw Abort(.forbidden)
+            throw StudyError(.noPermissionToEdit(user: study.user.id!, slug: study.slug))
         }
 
         try await study.treeTestStudy!.$observations.load(on: req.db)
@@ -148,20 +307,20 @@ final class TreeTestController: RouteCollection {
         let request = try req.content.decode(SubmitRequest.self)
 
         guard study.published else {
-            throw Abort(.forbidden)
+            throw StudyError(.notPublished(user: study.user.id!, slug: study.slug))
         }
         guard study.password == req.headers["StudyPassword"][safe: 0] else {
-            throw Abort(.unauthorized)
+            throw StudyError(.invalidPassword(user: study.user.id!, slug: study.slug))
         }
         guard treeTest.tasks.count == request.result.responses.count else {
-            throw Abort(.badRequest)
+            throw TreeTestError(.invalidCountOfTasksInSubmission)
         }
         for (index, element) in request.result.responses.enumerated() {
             guard treeTest.tasks[index].id == element.taskID else {
-                throw Abort(.badRequest)
+                throw TreeTestError(.outOfOrderTasksInSubmission)
             }
             guard treeTest.tree.contains(id: element.answer) else {
-                throw Abort(.badRequest)
+                throw TreeTestError(.submissionAnswerMissingInTree)
             }
         }
 
