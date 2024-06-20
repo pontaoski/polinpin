@@ -34,12 +34,13 @@ type alias Model =
     , password : String
     , services : List Network.OAuth2Service
     , normalLoginPossible : Bool
+    , loginStatus : Network.RequestStatus ()
     }
 
 
 init : ( Model, Effect Msg )
 init =
-    ( Model "" "" [] True, Effect.fromCmd <| Network.oauth2Services GotServices )
+    ( Model "" "" [] True Network.NoRequest, Effect.fromCmd <| Network.oauth2Services GotServices )
 
 
 
@@ -64,13 +65,13 @@ update msg model =
             ( { model | password = password }, Effect.none )
 
         Login ->
-            ( model, Effect.fromCmd <| Network.login model.username model.password LoginResult )
+            ( { model | loginStatus = Network.PendingRequest }, Effect.fromCmd <| Network.login model.username model.password LoginResult )
 
         LoginResult (Ok session) ->
-            ( model, Effect.fromShared <| Shared.signIn (Shared.User model.username model.username session.token) )
+            ( { model | loginStatus = Network.ResultReceived (Ok ()) }, Effect.fromShared <| Shared.signIn (Shared.User model.username model.username session.token) )
 
-        LoginResult (Err _) ->
-            ( model, Effect.none )
+        LoginResult (Err err) ->
+            ( { model | loginStatus = Network.ResultReceived (Err err) }, Effect.none )
 
         GotServices (Ok config) ->
             ( { model | services = config.services, normalLoginPossible = config.normalLoginPossible }, Effect.none )
@@ -124,6 +125,11 @@ loginBox model =
                     [ link [ Font.color (rgb255 0x32 0x7F 0xA2), Font.underline ] { url = "register", label = text "Register An Account" }
                     , UI.textButton (Just Login) [ alignRight ] "Login"
                     ]
+                , case model.loginStatus of
+                    Network.NoRequest -> none
+                    Network.PendingRequest -> text "Logging in..."
+                    Network.ResultReceived (Ok _) -> text "Logged in!"
+                    Network.ResultReceived (Err _) -> text "Failed to log in."
                 ]
 
              else

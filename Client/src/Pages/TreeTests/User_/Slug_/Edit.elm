@@ -23,6 +23,11 @@ import SharedUI exposing (tabButton)
 import TreeManipulation
 import UI
 import View exposing (View)
+import Html.Events
+import Html
+import Html.Attributes
+import Task
+import Browser.Dom
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -213,6 +218,7 @@ type LoadedMsg
     | Publish
     | PublishResult (Result Http.Error ())
     | Drag (Drag.DragMsg (Network.TreeNode Network.TreeStudyItem) CandidatePosition)
+    | NoOp
 
 
 uniqueTaskID : Int -> List Network.TreeStudyTask -> String
@@ -234,14 +240,17 @@ updateLoaded user params msg model =
             ( { model | tree = TreeManipulation.mapByID id (\k -> { k | text = cont }) model.tree }, Effect.none )
 
         NewNodeUnder underID ->
+            let
+                elementID = TreeManipulation.uniqueIntID 0 model.tree
+            in
             ( { model
                 | tree =
                     TreeManipulation.appendInNode
                         underID
-                        (Network.TreeNode (TreeManipulation.uniqueIntID 0 model.tree) { text = "" } [])
+                        (Network.TreeNode elementID { text = "" } [])
                         model.tree
               }
-            , Effect.none
+            , Effect.fromCmd (Task.attempt (\_ -> NoOp) (Browser.Dom.focus elementID))
             )
 
         DeleteNode id ->
@@ -341,6 +350,9 @@ updateLoaded user params msg model =
         Drag (Drag.Invalid _) ->
             ( model, Effect.none )
 
+        NoOp ->
+            ( model, Effect.none )
+
 
 
 -- VIEW LOADED
@@ -360,7 +372,7 @@ loadedView shared model =
                     ]
                 , case model.tab of
                     Tree ->
-                        viewNode True model model.tree
+                        viewNode Nothing model model.tree
 
                     Tasks ->
                         viewTasks model model.tasks
@@ -459,12 +471,38 @@ whenTrue cond node =
     else
         none
 
+type alias KeyEvent =
+    { key : String
+    , shiftKey : Bool
+    }
 
-viewNode : Bool -> LoadedModel -> Network.TreeNode Network.TreeStudyItem -> Element LoadedMsg
-viewNode isRoot model ((Network.TreeNode id data children) as node) =
+enterKeyEventHandler : Maybe String -> String -> Attribute LoadedMsg
+enterKeyEventHandler parent this =
+    let
+        event =
+            D.map2 KeyEvent
+                (D.field "key" D.string)
+                (D.field "shiftKey" D.bool)
+        isKey it =
+            if it.key /= "Enter" then
+                D.fail "not a key"
+            else if it.shiftKey then
+                D.succeed (NewNodeUnder this)
+            else
+                case parent of
+                    Just itHasAParent ->
+                        D.succeed (NewNodeUnder itHasAParent)
+                    Nothing ->
+                        D.fail "no parent"
+        composite = D.andThen isKey event
+    in
+    htmlAttribute (Html.Events.on "keydown" composite)
+
+viewNode : Maybe String -> LoadedModel -> Network.TreeNode Network.TreeStudyItem -> Element LoadedMsg
+viewNode parent model ((Network.TreeNode id data children) as node) =
     let
         childNodes =
-            List.map (viewNode False model) children
+            List.map (viewNode (Just id) model) children
 
         addChild =
             UI.smallTextButton (Just (NewNodeUnder id)) [] "add"
@@ -473,14 +511,14 @@ viewNode isRoot model ((Network.TreeNode id data children) as node) =
             UI.smallTextButton (Just (DeleteNode id)) [] "delete"
 
         editActions =
-            if isRoot then
+            if parent == Nothing then
                 [ addChild ]
 
             else
                 [ addChild, delete ]
 
         whenNotRoot el =
-            if isRoot then
+            if parent == Nothing then
                 none
 
             else
@@ -494,7 +532,7 @@ viewNode isRoot model ((Network.TreeNode id data children) as node) =
         , column
             [ paddingEach
                 { left =
-                    if isRoot then
+                    if parent == Nothing then
                         0
 
                     else
@@ -509,7 +547,7 @@ viewNode isRoot model ((Network.TreeNode id data children) as node) =
                 [ spacing 10
                 , Element.above <| whenNotRoot (beacon (Before id) [ width (px 1) ])
                 ]
-                ([ if not isRoot then
+                ([ if parent /= Nothing then
                     UI.grayBox
                         [ Drag.onDragStart Drag node
                         , height fill
@@ -519,7 +557,7 @@ viewNode isRoot model ((Network.TreeNode id data children) as node) =
 
                    else
                     none
-                 , UI.textInput [ Element.below <| beacon (AppendedIn id) [ width (px 1) ] ]
+                 , UI.textInput [ Element.below <| beacon (AppendedIn id) [ width (px 1) ], enterKeyEventHandler parent id, htmlAttribute (Html.Attributes.id id) ]
                     { onChange = \str -> EditItem id str
                     , text = data.text
                     , placeholder = Just (Input.placeholder [] (text "label"))
@@ -630,6 +668,7 @@ selectingDialog model num =
         [ centerX
         , centerY
         , width (fill |> maximum 600)
+        , height (fill |> maximum 600)
         , Background.color <| rgb255 225 221 210
         , behindContent (UI.grayBox [ width fill, height fill ] none)
         , padding 20
@@ -639,7 +678,9 @@ selectingDialog model num =
             [ text "Select An Answer"
             , UI.textButton (Just CancelDefiningAnswerForTask) [ alignRight ] "Close"
             ]
-        , selectingViewNode num True model model.tree
+        , column [ width fill, height fill, scrollbars, padding 2 ]
+            [ selectingViewNode num True model model.tree
+            ]
         ]
 
 

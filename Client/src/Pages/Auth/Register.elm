@@ -34,12 +34,13 @@ type alias Model =
     , name : String
     , services : List Network.OAuth2Service
     , normalLoginPossible : Bool
+    , registerStatus : Network.RequestStatus ()
     }
 
 
 init : ( Model, Effect Msg )
 init =
-    ( Model "" "" "" [] True, Effect.fromCmd <| Network.oauth2Services GotServices )
+    ( Model "" "" "" [] True Network.NoRequest, Effect.fromCmd <| Network.oauth2Services GotServices )
 
 
 
@@ -68,13 +69,13 @@ update msg model =
             ( { model | name = name }, Effect.none )
 
         Login ->
-            ( model, Effect.fromCmd <| Network.register model.name model.username model.password RegisterResult )
+            ( { model | registerStatus = Network.PendingRequest }, Effect.fromCmd <| Network.register model.name model.username model.password RegisterResult )
 
         RegisterResult (Ok session) ->
-            ( model, Effect.fromShared <| Shared.signIn (Shared.User model.name model.username session.token) )
+            ( { model | registerStatus = Network.ResultReceived (Ok ()) }, Effect.fromShared <| Shared.signIn (Shared.User model.name model.username session.token) )
 
-        RegisterResult (Err _) ->
-            ( model, Effect.none )
+        RegisterResult (Err err) ->
+            ( { model | registerStatus = Network.ResultReceived (Err err) }, Effect.none )
 
         GotServices (Ok config) ->
             ( { model | services = config.services, normalLoginPossible = config.normalLoginPossible }, Effect.none )
@@ -135,6 +136,11 @@ loginBox model =
                     [ UI.link [] { url = "login", label = text "Log Into An Existing Account" }
                     , UI.textButton (Just Login) [ alignRight ] "Register"
                     ]
+                , case model.registerStatus of
+                    Network.NoRequest -> none
+                    Network.PendingRequest -> text "Logging in..."
+                    Network.ResultReceived (Ok _) -> text "Logged in!"
+                    Network.ResultReceived (Err _) -> text "Failed to log in."
                 ]
 
              else
@@ -154,7 +160,7 @@ serviceButton service =
 view : Shared.Model -> Model -> View Msg
 view shared model =
     SharedUI.sharedFrame shared
-        { title = "Hi"
+        { title = "Register"
         , body =
             el [ width fill, height fill ] <|
                 loginBox model
