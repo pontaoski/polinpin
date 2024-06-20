@@ -134,10 +134,10 @@ toList tlist =
     in
     case list.current of
         AtItem a ->
-            list.before ++ a :: list.after
+            (List.reverse list.before) ++ a :: list.after
 
         _ ->
-            list.before ++ list.after
+            (List.reverse list.before) ++ list.after
 
 
 mapCurrent : (a -> a) -> TraversalList a -> TraversalList a

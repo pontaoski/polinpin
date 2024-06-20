@@ -315,7 +315,7 @@ final class TreeTestController: RouteCollection {
         guard treeTest.tasks.count == request.result.responses.count else {
             throw TreeTestError(.invalidCountOfTasksInSubmission)
         }
-        for (index, element) in request.result.responses.reversed().enumerated() {
+        for (index, element) in request.result.responses.enumerated() {
             guard treeTest.tasks[index].id == element.taskID else {
                 throw TreeTestError(.outOfOrderTasksInSubmission)
             }

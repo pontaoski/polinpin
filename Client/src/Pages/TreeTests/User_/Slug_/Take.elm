@@ -269,7 +269,7 @@ preTask : Element LoadedMsg
 preTask =
     textColumn [ spacing 10, padding 24, width fill ]
         [ el [ Font.bold, Font.size <| UI.intScale 2 ] (text "Welcome")
-        , par "This is a study for KDE, to help us make our software easier to use."
+        , par "This is a study of open source software, to help us make it easier to use."
         , par "You will be asked to find an item that helps you with a given task from a list of items."
         , par "Click through it until you find an item that you think helps you complete the given task."
         , par "If you make a wrong turn you can go back by clicking one of the items above."
@@ -356,6 +356,6 @@ viewTask : LoadedModel -> Network.TreeStudyTask -> Network.TreeTestAnsweredQuest
 viewTask model task answer =
     column
         [ padding 24, spacing 20 ]
-        [ text task.text
+        [ paragraph [] [text task.text]
         , viewNode model True answer model.tree
         ]
