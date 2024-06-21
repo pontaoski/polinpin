@@ -160,9 +160,39 @@ svg:active g path[stroke-width="1"] {
         this.el.appendChild(node)
       }
     }
+    class RoughPath extends Rough {
+      static get observedAttributes() {
+        return super.observedAttributes.concat(['path'])
+      }
+      attributeChangedCallback(name, oldValue, newValue) {
+        if (name !== "path") {
+          return super.attributeChangedCallback(name, oldValue, newValue)
+        } else {
+          if (this.rc) this.redraw()
+        }
+      }
+      redraw() {
+        const w = this.clientWidth
+        const h = this.clientHeight
+
+        let node = this.rc.path(this.getAttribute("path"), {
+          stroke: this.strokeColor,
+          roughness: 2.0
+        })
+        this.el.setAttribute("viewBox", `0 0 ${w} ${h}`)
+        this.el.setAttribute("width", `${w}`)
+        this.el.setAttribute("height", `${h}`)
+        this.el.style.width = `${w}px`
+        this.el.style.height = `${h}px`
+        if (this.el.firstChild)
+          this.el.removeChild(this.el.firstChild)
+        this.el.appendChild(node)
+      }
+    }
     window.customElements.define('rough-rectangle', RoughRectangle)
     window.customElements.define('rougher-rectangle', RougherRectangle)
     window.customElements.define('rough-horizontal-line', RoughHorizontalLine)
+    window.customElements.define('rough-path', RoughPath)
   </script>
 </head>
 

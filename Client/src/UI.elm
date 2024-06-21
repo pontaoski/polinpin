@@ -1,4 +1,4 @@
-module UI exposing (Palette, blackLine, box, currentPasswordInput, darkTextButton, emailInput, fontSize, grayBox, intScale, line, link, multilineInput, newPasswordInput, par, scale, searchInput, sizedLabel, smallTealTextButton, smallTextButton, solidBox, solidRoughBox, spellCheckedInput, tealTextButton, textButton, textInput, transtext, usernameInput, withScrim, notAllowedCursor, linkButton)
+module UI exposing (Palette, blackLine, box, currentPasswordInput, darkTextButton, emailInput, fontSize, grayBox, intScale, line, link, multilineInput, newPasswordInput, par, scale, searchInput, sizedLabel, smallTealTextButton, smallTextButton, solidBox, solidRoughBox, spellCheckedInput, tealTextButton, textButton, textInput, transtext, usernameInput, withScrim, notAllowedCursor, linkButton, path, elementButton)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -80,6 +80,15 @@ box palette attrs child =
     in
     el (behindContent (html htmlEl) :: attrs) child
 
+path : Palette -> List (Attribute msg) -> (Int, Int) -> String -> Element msg
+path palette attrs (w, h) svgPath =
+    let
+        htmlEl =
+            node "rough-path"
+                (attribute "path" svgPath :: (paletteToAttribute palette))
+                []
+    in
+    el (behindContent (html htmlEl) :: attrs ++ [ width (px w), height (px h) ]) none
 
 solidBox : Color -> List (Attribute msg) -> Element msg -> Element msg
 solidBox color attrs child =
@@ -199,6 +208,10 @@ abstractButton palette msg attrs child =
 textButton : Maybe msg -> List (Attribute msg) -> String -> Element msg
 textButton msg attrs txt =
     abstractButton darkGrayPalette msg (padding 10 :: attrs) (text txt)
+
+elementButton : Maybe msg -> List (Attribute msg) -> Element msg -> Element msg
+elementButton msg attrs el =
+    abstractButton darkGrayPalette msg (padding 10 :: attrs) el
 
 linkButton : String -> List (Attribute msg) -> String -> Element msg
 linkButton url attrs txt =

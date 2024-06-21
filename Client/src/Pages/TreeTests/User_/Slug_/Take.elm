@@ -271,9 +271,26 @@ preTask =
         [ el [ Font.bold, Font.size <| UI.intScale 2 ] (text "Welcome")
         , par "This is a study of open source software, to help us make it easier to use."
         , par "You will be asked to find an item that helps you with a given task from a list of items."
-        , par "Click through it until you find an item that you think helps you complete the given task."
+        , par "Click through the list until you find an item that you think will help you complete the given task."
+        , column [ spacing 10 ]
+            [ UI.elementButton (Nothing) [] (row [ spacing 2 ] [ downArrow, text "Example" ])
+            , column [ paddingEach { left = 10, top = 0, right = 0, bottom = 0 }, spacing 10 ]
+                [ column [ paddingEach { left = 10, top = 0, right = 0, bottom = 0 }, spacing 10 ]
+                    [ UI.elementButton (Nothing) [] (row [ spacing 2 ] [ downArrow, text "Pear Inc" ])
+                    , column [ paddingEach { left = 20, top = 0, right = 0, bottom = 0 }, spacing 10 ]
+                        [ row [ spacing 20 ]
+                            [ UI.textButton (Nothing) [] "Boscphones"
+                            , UI.smallTealTextButton (Nothing) [] "I'd find it here"
+                            ]
+                        ]
+                    ]
+                ]
+            ]
         , par "If you make a wrong turn you can go back by clicking one of the items above."
-        , par "Remember, this isn't a test of your ability. There are no right or wrong answers."
+        , par "Remember, this isn't a test of your ability."
+        , par "If it takes you a while to find the answer, or you get lost, that's exactly what we want to see."
+        , par "We're finding problems with the software, not you."
+        , par "You are helping us find problems with the software."
         , UI.textButton (Just NextQuestion) [ alignLeft ] "Get Started"
         ]
 
@@ -316,6 +333,13 @@ viewLoaded shared model =
         , over = Nothing
         }
 
+rightArrow : Element msg
+rightArrow =
+    UI.path (UI.Palette (rgb255 0 0 0) (rgb255 50 50 50) Nothing Nothing Nothing Nothing) [] (18, 18) "M1 0L10 9L1 18"
+
+downArrow : Element msg
+downArrow =
+    UI.path (UI.Palette (rgb255 0 0 0) (rgb255 50 50 50) Nothing Nothing Nothing Nothing) [] (18, 18) "M18.5 5L9.5 14L0.5 5"
 
 viewNode : LoadedModel -> Bool -> Network.TreeTestAnsweredQuestion -> Network.TreeNode Network.TreeStudyItem -> Element LoadedMsg
 viewNode model isRoot answer (Network.TreeNode id data children) =
@@ -334,7 +358,24 @@ viewNode model isRoot answer (Network.TreeNode id data children) =
         , spacing 10
         ]
         (wrappedRow [ spacing 20 ]
-            [ UI.textButton (Just (NodeClicked id)) [] data.text
+            [ UI.elementButton (Just (NodeClicked id)) []
+                (row [ spacing 2 ]
+                    [ if List.length children == 0 then
+                        none
+                      else if answer.answer == id then
+                        downArrow
+                      else if (
+                        children
+                          |> List.filter (TreeManipulation.containsNodeWithID answer.answer)
+                          |> List.map (viewNode model False answer)
+                          |> List.isEmpty
+                          |> not
+                      ) then
+                        downArrow
+                      else
+                        rightArrow
+                    , text data.text
+                    ])
             , if answer.answer == id && List.length children == 0 then
                 UI.smallTealTextButton (Just NextQuestion) [] "I'd find it here"
 
