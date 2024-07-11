@@ -520,11 +520,11 @@ viewResultsItems { items, observations } =
                 |> List.map2 Tuple.pair (observationsByItem observations |> List.map averageRating)
     in
     column [ spacing 20, width (fill |> maximum 600) ]
-        (List.map viewResultsItem data)
+        (List.map (viewResultsItem (List.length observations)) data)
 
 
-viewResultsItem : ( Float, ( Network.DesirabilityStudyItem, List ( String, Float ) ) ) -> Element ResultsMsg
-viewResultsItem ( average, ( item, data ) ) =
+viewResultsItem : Int -> ( Float, ( Network.DesirabilityStudyItem, List ( String, (Int, Float) ) ) ) -> Element ResultsMsg
+viewResultsItem resultCount ( average, ( item, data ) ) =
     UI.grayBox [ width fill, padding 20 ] <|
         column [ width fill, spacing 20 ]
             ([ row [ spacing 20, width fill ]
@@ -538,13 +538,20 @@ viewResultsItem ( average, ( item, data ) ) =
              , UI.blackLine [ width fill ]
              ]
                 ++ List.map viewResultsItemPercent data
+                ++ [ UI.blackLine [ width fill ]
+                   , row [ spacing 20, width fill ]
+                        [ el [ alignLeft ] (text "Total:")
+                        , el [ alignRight ] (text (String.fromInt resultCount))
+                        ]
+                   ]
             )
 
 
-viewResultsItemPercent : ( String, Float ) -> Element ResultsMsg
-viewResultsItemPercent ( word, percent ) =
-    row [ width fill ]
+viewResultsItemPercent : ( String, (Int, Float) ) -> Element ResultsMsg
+viewResultsItemPercent ( word, (count, percent) ) =
+    row [ width fill, spacing 30 ]
         [ text word
+        , el [ alignRight ] (text <| (String.fromInt count))
         , el [ alignRight ] (text <| (percent * 100.0 |> round |> String.fromInt) ++ "%")
         ]
 
@@ -600,7 +607,7 @@ mapSecond =
     List.map << Tuple.mapSecond
 
 
-wordPercentsForItem : List Network.DesirabilityStudyWordResponse -> List ( String, Float )
+wordPercentsForItem : List Network.DesirabilityStudyWordResponse -> List ( String, (Int, Float) )
 wordPercentsForItem responses =
     let
         uniqueWords =
@@ -620,7 +627,7 @@ wordPercentsForItem responses =
     uniqueWords
         |> List.map doubleUp
         |> mapSecond wordCount
-        |> mapSecond (\k -> toFloat k / toFloat (List.length responses))
+        |> mapSecond (\k -> (k, toFloat k / toFloat (List.length responses)))
         |> List.sortBy Tuple.second
         |> List.reverse
 
@@ -633,6 +640,6 @@ averageRating item =
         |> (\x -> (x |> toFloat) / (List.length item |> toFloat))
 
 
-wordPercents : List (List Network.DesirabilityStudyWordResponse) -> List (List ( String, Float ))
+wordPercents : List (List Network.DesirabilityStudyWordResponse) -> List (List ( String, (Int, Float) ))
 wordPercents responses =
     responses |> List.map wordPercentsForItem

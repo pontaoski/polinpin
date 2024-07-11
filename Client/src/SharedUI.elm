@@ -2,10 +2,10 @@ module SharedUI exposing (..)
 
 import Element exposing (..)
 import Gen.Route
+import Network
 import Shared
 import UI
 import View exposing (View)
-import Network
 
 
 sharedFrame : Shared.Model -> View msg -> View msg
@@ -29,7 +29,12 @@ header title shared =
         [ shadedRow [ alignLeft ]
             [ UI.link [] { url = "/", label = text "Polinpin" }
             ]
-        , el [ centerX ] (text title)
+        , case (classifyDevice shared.dimensions).class of
+            Phone ->
+                none
+
+            _ ->
+                el [ centerX ] (text title)
         , shadedRow [ alignRight, spacing 20 ]
             (case shared.user of
                 Just _ ->
@@ -43,16 +48,18 @@ header title shared =
             )
         ]
 
+
 type NameKind
     = TitleCase
 
+
 kindToString : Network.StudyKind -> NameKind -> String
 kindToString kind nameKind =
-    case (kind, nameKind) of
-        (Network.TreeTest, TitleCase) ->
+    case ( kind, nameKind ) of
+        ( Network.TreeTest, TitleCase ) ->
             "Tree Test"
 
-        (Network.DesirabilityTest, TitleCase) ->
+        ( Network.DesirabilityTest, TitleCase ) ->
             "Desirability Study"
 
 

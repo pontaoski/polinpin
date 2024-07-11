@@ -11,6 +11,7 @@ port module Shared exposing
     , userDecoder
     )
 
+import Browser.Events
 import Dict
 import Gen.Route
 import Http
@@ -25,11 +26,14 @@ import Request exposing (Request)
 
 
 type alias Flags =
-    D.Value
+    { user : D.Value
+    , dimensions : { width : Int, height : Int }
+    }
 
 
 type alias Model =
     { user : Maybe User
+    , dimensions : { width : Int, height : Int }
     }
 
 
@@ -61,6 +65,7 @@ type Msg
     = SignIn User
     | SignOut
     | CheckLoginResult String (Result Http.Error Network.UserInformation)
+    | NewDimensions Int Int
 
 
 
@@ -87,14 +92,14 @@ init req flags =
                     )
 
                 _ ->
-                    case D.decodeValue userDecoder flags of
+                    case D.decodeValue userDecoder flags.user of
                         Ok u ->
                             ( Just u, Network.me (Network.UserSession u.token) (CheckLoginResult u.token) )
 
                         Err _ ->
                             ( Nothing, Cmd.none )
     in
-    ( Model user, msg )
+    ( Model user flags.dimensions, msg )
 
 
 signIn : User -> Msg
@@ -121,6 +126,9 @@ update _ msg model =
         CheckLoginResult _ (Err _) ->
             ( { model | user = Nothing }, Cmd.none )
 
+        NewDimensions w h ->
+            ( { model | dimensions = { width = w, height = h } }, Cmd.none )
+
 
 
 --- SUBSCRIPTIONS
@@ -128,7 +136,7 @@ update _ msg model =
 
 subscriptions : Request -> Model -> Sub Msg
 subscriptions _ _ =
-    Sub.none
+    Browser.Events.onResize (\w h -> NewDimensions w h)
 
 
 

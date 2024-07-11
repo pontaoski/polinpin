@@ -203,7 +203,7 @@ svg:active g path[stroke-width="1"] {
     const flags = storedData ? JSON.parse(storedData) : storedData
 
     const app = Elm.Main.init({
-      flags: flags
+      flags: { user: flags, dimensions: { width: window.innerWidth, height: window.innerHeight } }
     })
     setupDraggable(app.ports.dragEvents.send)
 

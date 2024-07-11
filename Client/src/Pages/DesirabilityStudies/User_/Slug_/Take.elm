@@ -254,7 +254,7 @@ viewLoaded shared model =
         , body =
             case TraversalList.current model.items of
                 TraversalList.AtItem item ->
-                    viewItem model item
+                    viewItem shared model item
 
                 TraversalList.BeforeList ->
                     preTask model
@@ -279,8 +279,8 @@ preTask model =
         ]
 
 
-viewItem : LoadedModel -> ( Network.DesirabilityStudyItem, Network.DesirabilityStudyWordResponse ) -> Element LoadedMsg
-viewItem model ( item, response ) =
+viewItem : Shared.Model -> LoadedModel -> ( Network.DesirabilityStudyItem, Network.DesirabilityStudyWordResponse ) -> Element LoadedMsg
+viewItem shared model ( item, response ) =
     column [ centerX, width (fill |> maximum 700), spacing 20 ]
         [ UI.grayBox [ centerX, width fill ]
             (column [ padding 20, spacing 20, width fill ]
@@ -330,20 +330,29 @@ viewItem model ( item, response ) =
                     "Select " ++ (model.numberOfWordsToSelect - List.length response.words |> String.fromInt) ++ " more words"
                 )
             )
-        , row [ width fill, spacing 20 ]
-            [ UI.grayBox [ width (fillPortion 1), padding 20, alignTop ] <|
-                column [ width fill, spacing 10 ]
-                    (model.wordBank
-                        |> List.filter (\k -> not (List.member k.word response.words))
-                        |> List.map .word
-                        |> (List.map <| \k -> UI.textButton (Just (AddWord k)) [ width fill ] k)
-                    )
-            , UI.grayBox [ width (fillPortion 1), padding 20, alignTop ] <|
-                column [ width fill, spacing 10 ]
-                    (response.words
-                        |> (List.map <| \k -> UI.textButton (Just (RemoveWord k)) [ width fill ] k)
-                    )
-            ]
+        , let
+            wordBank =
+                UI.grayBox [ width (fillPortion 1), padding 20, alignTop ] <|
+                    wrappedRow [ width fill, spacing 10 ]
+                        (model.wordBank
+                            |> List.filter (\k -> not (List.member k.word response.words))
+                            |> List.map .word
+                            |> (List.map <| \k -> UI.textButton (Just (AddWord k)) [ width fill ] k)
+                        )
+
+            selectedWords =
+                UI.grayBox [ width (fillPortion 1), padding 20, alignTop ] <|
+                    column [ width fill, spacing 10 ]
+                        (response.words
+                            |> (List.map <| \k -> UI.textButton (Just (RemoveWord k)) [ width fill ] k)
+                        )
+          in
+          case (classifyDevice shared.dimensions).class of
+            Phone ->
+                column [ width fill, spacing 20 ] [ selectedWords, wordBank ]
+
+            _ ->
+                row [ width fill, spacing 20 ] [ wordBank, selectedWords ]
         ]
 
 
